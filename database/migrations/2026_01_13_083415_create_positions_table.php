@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('disc_statements', function (Blueprint $table) {
+        Schema::create('positions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('disc_question_id')->constrained()->cascadeOnDelete();
-            $table->text('text');
-            $table->enum('disc_type', ['D', 'I', 'S', 'C']);
+            $table->foreignId('client_id')->constrained()->cascadeOnDelete();
+            $table->string('title');
+            $table->text('description')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
+
+            $table->unique(['client_id', 'title']);
         });
     }
 
@@ -25,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('disc_statements');
+        Schema::dropIfExists('positions');
     }
 };
