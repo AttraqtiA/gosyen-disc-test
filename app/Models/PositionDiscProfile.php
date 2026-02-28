@@ -8,6 +8,7 @@ class PositionDiscProfile extends Model
 {
     protected $fillable = [
         'position_id',
+        'test_type',
         'd_target',
         'i_target',
         's_target',

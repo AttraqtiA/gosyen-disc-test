@@ -14,6 +14,7 @@ class DiscResultController extends Controller
 {
     public function show(DiscTest $test, DiscNarrativeService $narrativeService)
     {
+        $hasClientPosition = Schema::hasTable('client_position');
         $test->load(['answers.pStatement', 'answers.kStatement']);
         $answered = $test->answers()->count();
         $totalQuestions = 24;
@@ -27,7 +28,8 @@ class DiscResultController extends Controller
             'totalQuestions',
             'result',
             'recommendations',
-            'narrative'
+            'narrative',
+            'hasClientPosition'
         ));
     }
 
@@ -83,17 +85,38 @@ class DiscResultController extends Controller
             return collect();
         }
 
+        $testType = 'DISC';
+
+        $relations = ['client', 'profile'];
+        $hasClientPosition = Schema::hasTable('client_position');
+        if ($hasClientPosition) {
+            $relations[] = 'clients';
+        }
+
         $positionQuery = Position::query()
-            ->with(['client', 'profile'])
+            ->with($relations)
             ->where('is_active', true)
-            ->whereHas('profile', fn ($query) => $query->where('is_active', true));
+            ->whereHas('profile', function ($query) use ($testType) {
+                $query->where('is_active', true);
+                if (Schema::hasColumn('position_disc_profiles', 'test_type')) {
+                    $query->where('test_type', $testType);
+                }
+            });
 
         $positions = collect();
 
         if ($test->client_id) {
-            $positions = (clone $positionQuery)
-                ->where('client_id', $test->client_id)
-                ->get();
+            $positions = (clone $positionQuery)->where(function ($query) use ($test) {
+                $query->where('is_global', true);
+
+                if (Schema::hasTable('client_position')) {
+                    $query->orWhereHas('clients', function ($clientQuery) use ($test) {
+                        $clientQuery->where('clients.id', $test->client_id);
+                    });
+                }
+
+                $query->orWhere('client_id', $test->client_id);
+            })->get();
         }
 
         if ($positions->isEmpty()) {
@@ -135,17 +158,23 @@ class DiscResultController extends Controller
         })->sortByDesc('match_score')->values();
 
         $ranked->each(function ($item, $index) use ($test) {
-            DiscRecommendation::create([
+            $payload = [
                 'disc_test_id' => $test->id,
                 'position_id' => $item['position']->id,
                 'match_score' => $item['match_score'],
                 'rank' => $index + 1,
                 'source' => 'deterministic',
-            ]);
+            ];
+
+            if (Schema::hasColumn('disc_recommendations', 'test_type')) {
+                $payload['test_type'] = 'DISC';
+            }
+
+            DiscRecommendation::create($payload);
         });
 
         return DiscRecommendation::where('disc_test_id', $test->id)
-            ->with(['position.client'])
+            ->with($hasClientPosition ? ['position.client', 'position.clients'] : ['position.client'])
             ->orderBy('rank')
             ->get();
     }

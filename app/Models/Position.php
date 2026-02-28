@@ -11,11 +11,17 @@ class Position extends Model
         'title',
         'description',
         'is_active',
+        'is_global',
     ];
 
     public function client()
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function clients()
+    {
+        return $this->belongsToMany(Client::class, 'client_position')->withTimestamps();
     }
 
     public function profile()

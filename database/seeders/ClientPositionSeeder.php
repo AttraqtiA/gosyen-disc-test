@@ -43,12 +43,14 @@ class ClientPositionSeeder extends Seeder
             foreach ($positions as $item) {
                 $position = Position::updateOrCreate(
                     ['client_id' => $client->id, 'title' => $item['title']],
-                    ['description' => $item['description'], 'is_active' => true]
+                    ['description' => $item['description'], 'is_active' => true, 'is_global' => true]
                 );
+
+                $position->clients()->syncWithoutDetaching([$client->id]);
 
                 PositionDiscProfile::updateOrCreate(
                     ['position_id' => $position->id],
-                    [...$item['profile'], 'is_active' => true]
+                    [...$item['profile'], 'test_type' => 'DISC', 'is_active' => true]
                 );
             }
 

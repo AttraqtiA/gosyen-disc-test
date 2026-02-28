@@ -11,6 +11,7 @@ class DiscRecommendation extends Model
         'position_id',
         'match_score',
         'rank',
+        'test_type',
         'source',
     ];
 

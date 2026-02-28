@@ -14,6 +14,11 @@ class Client extends Model
 
     public function positions()
     {
+        return $this->belongsToMany(Position::class, 'client_position')->withTimestamps();
+    }
+
+    public function ownedPositions()
+    {
         return $this->hasMany(Position::class);
     }
 
