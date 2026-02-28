@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Client;
 use App\Models\Position;
 use App\Models\PositionDiscProfile;
+use App\Models\TestSession;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -50,6 +51,17 @@ class ClientPositionSeeder extends Seeder
                     [...$item['profile'], 'is_active' => true]
                 );
             }
+
+            TestSession::updateOrCreate(
+                ['code' => 'DEMODISC'],
+                [
+                    'name' => 'Demo DISC Session',
+                    'client_id' => $client->id,
+                    'test_type' => 'DISC',
+                    'is_active' => true,
+                    'expires_at' => null,
+                ]
+            );
         });
     }
 }

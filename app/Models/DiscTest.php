@@ -8,6 +8,7 @@ class DiscTest extends Model
 {
     protected $fillable = [
         'client_id',
+        'test_session_id',
         'nama',
         'email',
         'nomor_hp',
@@ -39,6 +40,11 @@ class DiscTest extends Model
     public function client()
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function session()
+    {
+        return $this->belongsTo(TestSession::class, 'test_session_id');
     }
 
     public function result()

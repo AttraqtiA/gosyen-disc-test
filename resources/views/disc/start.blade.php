@@ -115,7 +115,7 @@
             <img src="/images/GosyenLogo-removebg-preview.png" alt="Gosyen Logo">
             <h1>Tes Kepribadian</h1>
         </div>
-        <p class="subtitle">Isi data responden terlebih dahulu. Tes ini tidak memerlukan akun.</p>
+        <p class="subtitle">Sesi: <strong>{{ $session->name }}</strong> (Kode: {{ $session->code }})</p>
 
         @if ($errors->any())
             <div class="errors">
@@ -129,6 +129,7 @@
 
         <form method="POST" action="/start">
             @csrf
+            <input type="hidden" name="access_code" value="{{ $session->code }}">
             <div class="grid">
                 <div class="field full">
                     <label for="nama">Nama Lengkap *</label>

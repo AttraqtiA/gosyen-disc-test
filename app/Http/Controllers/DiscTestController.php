@@ -7,6 +7,7 @@ use App\Models\DiscTest;
 use App\Models\DiscQuestion;
 use App\Models\DiscAnswer;
 use App\Models\Client;
+use App\Models\TestSession;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
 
@@ -15,14 +16,65 @@ class DiscTestController extends Controller
     private const TOTAL_QUESTIONS = 24;
     private const TIME_LIMIT_MINUTES = 15;
 
-    public function start()
+    public function codeEntry()
     {
-        return view('disc.start');
+        return view('disc.code-entry');
+    }
+
+    public function accessByCode(Request $request)
+    {
+        if (!Schema::hasTable('test_sessions')) {
+            abort(500, 'Tabel test_sessions belum tersedia. Jalankan migrasi terlebih dahulu.');
+        }
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50'],
+        ]);
+
+        $session = TestSession::query()
+            ->whereRaw('UPPER(code) = ?', [Str::upper($validated['code'])])
+            ->where('test_type', 'DISC')
+            ->where('is_active', true)
+            ->where(function ($query) {
+                $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->first();
+
+        if (!$session) {
+            return back()->withErrors([
+                'code' => 'Kode tidak valid atau sudah tidak aktif.',
+            ])->withInput();
+        }
+
+        return redirect('/start/' . $session->code);
+    }
+
+    public function start(string $code)
+    {
+        if (!Schema::hasTable('test_sessions')) {
+            abort(500, 'Tabel test_sessions belum tersedia. Jalankan migrasi terlebih dahulu.');
+        }
+
+        $session = TestSession::query()
+            ->whereRaw('UPPER(code) = ?', [Str::upper($code)])
+            ->where('test_type', 'DISC')
+            ->where('is_active', true)
+            ->where(function ($query) {
+                $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->firstOrFail();
+
+        return view('disc.start', compact('session'));
     }
 
     public function storeMeta(Request $request)
     {
+        if (!Schema::hasTable('test_sessions')) {
+            abort(500, 'Tabel test_sessions belum tersedia. Jalankan migrasi terlebih dahulu.');
+        }
+
         $validated = $request->validate([
+            'access_code' => ['required', 'string', 'max:50'],
             'nama' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'nomor_hp' => ['nullable', 'string', 'max:30'],
@@ -37,9 +89,26 @@ class DiscTestController extends Controller
             'tujuan_tes' => ['nullable', 'string', 'max:255'],
         ]);
 
+        $session = TestSession::query()
+            ->whereRaw('UPPER(code) = ?', [Str::upper($validated['access_code'])])
+            ->where('test_type', 'DISC')
+            ->where('is_active', true)
+            ->where(function ($query) {
+                $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->first();
+
+        if (!$session) {
+            return redirect('/')->withErrors([
+                'code' => 'Kode sesi tidak valid atau sudah tidak aktif.',
+            ]);
+        }
+
         $clientId = null;
 
-        if (Schema::hasTable('clients')) {
+        if (Schema::hasTable('clients') && $session->client_id) {
+            $clientId = $session->client_id;
+        } elseif (Schema::hasTable('clients')) {
             $client = Client::firstOrCreate(
                 ['name' => $validated['institusi_perusahaan']],
                 ['code' => Str::slug($validated['institusi_perusahaan']) . '-' . Str::lower(Str::random(5))]
@@ -56,6 +125,9 @@ class DiscTestController extends Controller
 
         if (Schema::hasColumn('disc_tests', 'client_id')) {
             $payload['client_id'] = $clientId;
+        }
+        if (Schema::hasColumn('disc_tests', 'test_session_id')) {
+            $payload['test_session_id'] = $session->id;
         }
 
         $test = DiscTest::create($payload);

@@ -21,4 +21,9 @@ class Client extends Model
     {
         return $this->hasMany(DiscTest::class);
     }
+
+    public function sessions()
+    {
+        return $this->hasMany(TestSession::class);
+    }
 }
