@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             DiscQuestionSeeder::class,
             MbtiQuestionSeeder::class,
+            OceanQuestionSeeder::class,
             ClientPositionSeeder::class,
         ]);
     }

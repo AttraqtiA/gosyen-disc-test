@@ -1,164 +1,62 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tes Kepribadian - Soal {{ $number }}</title>
-    <style>
-        :root {
-            --bg: #030b1d;
-            --panel: #08152d;
-            --panel-soft: #0d2042;
-            --line: #1f3d68;
-            --text: #e6f1ff;
-            --muted: #94acd0;
-            --accent: #5ce8ff;
-            --accent-2: #35d0f5;
-        }
+@extends('layouts.tw')
 
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: Arial, sans-serif;
-            color: var(--text);
-            background:
-                radial-gradient(circle at 12% 18%, rgba(73, 224, 255, 0.18), transparent 38%),
-                radial-gradient(circle at 90% 12%, rgba(73, 126, 255, 0.18), transparent 34%),
-                var(--bg);
-            padding: 24px 16px;
-        }
+@section('title', 'DISC - Soal ' . $number)
 
-        .container {
-            max-width: 980px;
-            margin: 0 auto;
-            background: linear-gradient(180deg, rgba(13, 32, 66, 0.96), rgba(8, 21, 45, 0.98));
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
-        }
-
-        .head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-        .head h2 { margin: 0; }
-
-        .badge {
-            padding: 8px 12px;
-            border-radius: 999px;
-            background: rgba(92, 232, 255, 0.16);
-            border: 1px solid rgba(92, 232, 255, 0.35);
-            color: #bff7ff;
-            font-weight: 700;
-            font-size: 13px;
-        }
-
-        .progress {
-            margin-top: 12px;
-            background: #071327;
-            border: 1px solid var(--line);
-            height: 9px;
-            border-radius: 999px;
-            overflow: hidden;
-        }
-
-        .progress > div { background: linear-gradient(90deg, var(--accent), var(--accent-2)); height: 100%; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        th, td { border: 1px solid var(--line); padding: 10px; font-size: 14px; }
-        th { background: #071327; text-align: left; color: var(--muted); }
-        .center { text-align: center; }
-
-        input[type="radio"] { accent-color: var(--accent); }
-
-        .actions { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-
-        .hint { font-size: 13px; color: var(--muted); }
-        .error { color: #ffc5de; font-size: 13px; margin-top: 6px; }
-
-        button {
-            border: 0;
-            border-radius: 10px;
-            background: linear-gradient(180deg, var(--accent), var(--accent-2));
-            color: #032137;
-            padding: 11px 16px;
-            font-weight: 800;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        @media (max-width: 768px) {
-            .actions { flex-direction: column; align-items: flex-start; }
-            .head { flex-direction: column; align-items: flex-start; }
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="head">
-        <h2>Tes Kepribadian - Soal {{ $number }} dari 24</h2>
-        <div id="timer" class="badge">Sisa waktu: --:--</div>
-    </div>
-    <div class="progress"><div style="width: {{ (int)(($number / 24) * 100) }}%"></div></div>
-
-    @if (session('warning'))
-        <p class="hint" style="color:#bff7ff; margin-top: 10px;">{{ session('warning') }}</p>
-    @endif
-
-    <p class="hint" style="margin-top: 14px;">
-        Pilih satu pernyataan yang <strong>Paling menggambarkan</strong> diri Anda (P),
-        dan satu yang <strong>Paling Tidak menggambarkan</strong> diri Anda (K).
-    </p>
-
-    <form id="answer-form" method="POST" action="/test/{{ $test->id }}/answer">
-        @csrf
-        <input type="hidden" name="disc_question_id" value="{{ $question->id }}">
-        <input type="hidden" name="question_number" value="{{ $number }}">
-
-        <table>
-            <thead>
-                <tr>
-                    <th class="center" style="width:90px;">P</th>
-                    <th class="center" style="width:90px;">K</th>
-                    <th>Pernyataan</th>
-                </tr>
-            </thead>
-            <tbody>
-            @foreach ($question->statements as $statement)
-                <tr>
-                    <td class="center">
-                        <input
-                            type="radio"
-                            name="p"
-                            value="{{ $statement->id }}"
-                            @checked((int) old('p', optional($existingAnswer)->p_statement_id) === $statement->id)
-                            required
-                        >
-                    </td>
-                    <td class="center">
-                        <input
-                            type="radio"
-                            name="k"
-                            value="{{ $statement->id }}"
-                            @checked((int) old('k', optional($existingAnswer)->k_statement_id) === $statement->id)
-                            required
-                        >
-                    </td>
-                    <td>{{ $statement->text }}</td>
-                </tr>
-            @endforeach
-            </tbody>
-        </table>
-
-        @error('p')<div class="error">{{ $message }}</div>@enderror
-        @error('k')<div class="error">{{ $message }}</div>@enderror
-
-        <div class="actions">
-            <span class="hint">Mohon isi dengan jujur agar hasil tes mencerminkan karakter Anda yang sebenarnya.</span>
-            <button type="submit">{{ $number === 24 ? 'Selesai Tes' : 'Lanjut' }}</button>
+@section('content')
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-7">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Tes Kepribadian - Soal {{ $number }} dari 24</h1>
+            <div id="timer" class="inline-flex items-center rounded-full bg-brand-50 border border-brand-200 px-4 py-2 text-sm font-semibold text-brand-700">Sisa waktu: --:--</div>
         </div>
-    </form>
-</div>
 
+        <div class="mt-4 h-2 w-full rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-brand-500" style="width: {{ (int)(($number / 24) * 100) }}%"></div></div>
+
+        @if (session('warning'))
+            <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">{{ session('warning') }}</div>
+        @endif
+
+        <p class="mt-4 text-slate-600">Pilih satu pernyataan yang <strong>Paling menggambarkan</strong> diri Anda (P), dan satu yang <strong>Paling Tidak menggambarkan</strong> diri Anda (K).</p>
+
+        <form id="answer-form" method="POST" action="/test/{{ $test->id }}/answer" class="mt-5 space-y-4">
+            @csrf
+            <input type="hidden" name="disc_question_id" value="{{ $question->id }}">
+            <input type="hidden" name="question_number" value="{{ $number }}">
+
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600">
+                            <th class="px-4 py-3 text-center w-20">P</th>
+                            <th class="px-4 py-3 text-center w-20">K</th>
+                            <th class="px-4 py-3 text-left">Pernyataan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach ($question->statements as $statement)
+                        <tr class="border-t border-slate-100">
+                            <td class="px-4 py-3 text-center"><input type="radio" name="p" value="{{ $statement->id }}" @checked((int) old('p', optional($existingAnswer)->p_statement_id) === $statement->id) required></td>
+                            <td class="px-4 py-3 text-center"><input type="radio" name="k" value="{{ $statement->id }}" @checked((int) old('k', optional($existingAnswer)->k_statement_id) === $statement->id) required></td>
+                            <td class="px-4 py-3 text-slate-800">{{ $statement->text }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            @error('p')<div class="text-sm text-rose-600">{{ $message }}</div>@enderror
+            @error('k')<div class="text-sm text-rose-600">{{ $message }}</div>@enderror
+
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
+                <p class="text-sm text-slate-500">Mohon isi dengan jujur agar hasil tes mencerminkan karakter Anda yang sebenarnya.</p>
+                <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-brand-500 px-6 py-3 text-white font-bold hover:bg-brand-600">{{ $number === 24 ? 'Selesai Tes' : 'Lanjut' }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
 <script>
     (function () {
         const form = document.getElementById('answer-form');
@@ -177,7 +75,6 @@
         });
 
         function pad(value) { return String(value).padStart(2, '0'); }
-
         function renderTimer() {
             const min = Math.floor(remaining / 60);
             const sec = remaining % 60;
@@ -214,5 +111,4 @@
         });
     })();
 </script>
-</body>
-</html>
+@endsection

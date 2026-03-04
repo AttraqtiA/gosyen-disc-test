@@ -50,6 +50,9 @@ class DiscTestController extends Controller
         if ($testType === 'MBTI') {
             return redirect('/mbti/start/' . $session->code);
         }
+        if ($testType === 'OCEAN') {
+            return redirect('/ocean/start/' . $session->code);
+        }
 
         if ($testType !== 'DISC') {
             return back()->withErrors([

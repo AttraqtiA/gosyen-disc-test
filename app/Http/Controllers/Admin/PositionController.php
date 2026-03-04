@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Position;
 use App\Models\PositionDiscProfile;
 use App\Models\PositionMbtiProfile;
+use App\Models\PositionOceanProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -15,7 +16,7 @@ class PositionController extends Controller
 {
     public function index()
     {
-        $relations = ['client', 'profile', 'mbtiProfiles'];
+        $relations = ['client', 'profile', 'mbtiProfiles', 'oceanProfiles'];
         $hasClientPosition = Schema::hasTable('client_position');
         if ($hasClientPosition) {
             $relations[] = 'clients';
@@ -87,6 +88,7 @@ class PositionController extends Controller
             $position->profile->update(['is_active' => $position->is_active]);
         }
         $position->mbtiProfiles()->update(['is_active' => $position->is_active]);
+        $position->oceanProfiles()->update(['is_active' => $position->is_active]);
 
         return back()->with('success', 'Status posisi diperbarui.');
     }
@@ -162,6 +164,16 @@ class PositionController extends Controller
             ]);
         }
 
+        if ($testType === 'OCEAN') {
+            return $request->validate([
+                'o_target' => ['required', 'integer', 'min:0', 'max:100'],
+                'c_target' => ['required', 'integer', 'min:0', 'max:100'],
+                'e_target' => ['required', 'integer', 'min:0', 'max:100'],
+                'a_target' => ['required', 'integer', 'min:0', 'max:100'],
+                'n_target' => ['required', 'integer', 'min:0', 'max:100'],
+            ]);
+        }
+
         abort(422, 'Tipe tes tidak didukung untuk profil posisi.');
     }
 
@@ -176,6 +188,22 @@ class PositionController extends Controller
                     'i_target' => $data['i_target'],
                     's_target' => $data['s_target'],
                     'c_target' => $data['c_target'],
+                    'notes' => $data['notes'] ?? null,
+                    'is_active' => $position->is_active,
+                ]
+            );
+            return;
+        }
+
+        if ($testType === 'OCEAN') {
+            PositionOceanProfile::updateOrCreate(
+                ['position_id' => $position->id, 'test_type' => 'OCEAN'],
+                [
+                    'o_target' => $data['o_target'],
+                    'c_target' => $data['c_target'],
+                    'e_target' => $data['e_target'],
+                    'a_target' => $data['a_target'],
+                    'n_target' => $data['n_target'],
                     'notes' => $data['notes'] ?? null,
                     'is_active' => $position->is_active,
                 ]

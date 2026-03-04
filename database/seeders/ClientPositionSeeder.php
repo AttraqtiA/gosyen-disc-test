@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Position;
 use App\Models\PositionDiscProfile;
 use App\Models\PositionMbtiProfile;
+use App\Models\PositionOceanProfile;
 use App\Models\TestSession;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -87,6 +88,38 @@ class ClientPositionSeeder extends Seeder
                 );
             }
 
+            $oceanPositions = [
+                [
+                    'title' => 'Research & Innovation Specialist',
+                    'description' => 'Peran eksplorasi ide baru dan pengembangan konsep.',
+                    'profile' => ['o_target' => 78, 'c_target' => 65, 'e_target' => 45, 'a_target' => 55, 'n_target' => 35],
+                ],
+                [
+                    'title' => 'Operations Supervisor',
+                    'description' => 'Peran konsistensi proses, disiplin, dan koordinasi operasional.',
+                    'profile' => ['o_target' => 45, 'c_target' => 80, 'e_target' => 60, 'a_target' => 65, 'n_target' => 30],
+                ],
+                [
+                    'title' => 'Customer Success Lead',
+                    'description' => 'Peran komunikasi, empati, dan pengelolaan relasi klien.',
+                    'profile' => ['o_target' => 55, 'c_target' => 62, 'e_target' => 72, 'a_target' => 78, 'n_target' => 28],
+                ],
+            ];
+
+            foreach ($oceanPositions as $item) {
+                $position = Position::updateOrCreate(
+                    ['title' => $item['title']],
+                    ['client_id' => $client->id, 'description' => $item['description'], 'is_active' => true, 'is_global' => true]
+                );
+
+                $position->clients()->syncWithoutDetaching([$client->id]);
+
+                PositionOceanProfile::updateOrCreate(
+                    ['position_id' => $position->id, 'test_type' => 'OCEAN'],
+                    [...$item['profile'], 'notes' => null, 'is_active' => true]
+                );
+            }
+
             TestSession::updateOrCreate(
                 ['code' => 'DEMODISC'],
                 [
@@ -104,6 +137,17 @@ class ClientPositionSeeder extends Seeder
                     'name' => 'Demo MBTI Session',
                     'client_id' => $client->id,
                     'test_type' => 'MBTI',
+                    'is_active' => true,
+                    'expires_at' => null,
+                ]
+            );
+
+            TestSession::updateOrCreate(
+                ['code' => 'DEMOOCEAN'],
+                [
+                    'name' => 'Demo OCEAN Session',
+                    'client_id' => $client->id,
+                    'test_type' => 'OCEAN',
                     'is_active' => true,
                     'expires_at' => null,
                 ]

@@ -34,6 +34,11 @@ class Position extends Model
         return $this->hasMany(PositionMbtiProfile::class);
     }
 
+    public function oceanProfiles()
+    {
+        return $this->hasMany(PositionOceanProfile::class);
+    }
+
     public function recommendations()
     {
         return $this->hasMany(DiscRecommendation::class);
@@ -42,6 +47,11 @@ class Position extends Model
     public function mbtiRecommendations()
     {
         return $this->hasMany(MbtiRecommendation::class);
+    }
+
+    public function oceanRecommendations()
+    {
+        return $this->hasMany(OceanRecommendation::class);
     }
 
     public function customTestProfiles()

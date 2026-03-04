@@ -1,132 +1,170 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Kode Sesi Tes</title>
-    <style>
-        :root { --bg:#030b1d; --panel:#0a1b39; --line:#1f3d68; --text:#e6f1ff; --muted:#94acd0; --ok:#7ef9b6; --off:#ffc5de; --accent:#5ce8ff; --accent2:#35d0f5; }
-        *{box-sizing:border-box}
-        body{margin:0;font-family:Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 12% 18%, rgba(73,224,255,.18), transparent 38%),radial-gradient(circle at 90% 12%, rgba(73,126,255,.18), transparent 34%),var(--bg);padding:24px 16px}
-        .wrap{max-width:1250px;margin:0 auto}
-        .top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
-        .title{margin:0;font-size:36px}
-        .nav{display:flex;gap:10px;flex-wrap:wrap}
-        .tab{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid var(--line);text-decoration:none;color:var(--muted);font-weight:700}
-        .tab.active{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#032137;border-color:transparent}
-        .btn{border:0;border-radius:10px;background:linear-gradient(180deg,var(--accent),var(--accent2));color:#032137;padding:10px 14px;font-weight:800;cursor:pointer}
-        .card{background:linear-gradient(180deg, rgba(13,32,66,.96), rgba(8,21,45,.98));border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
-        .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-        .full{grid-column:1 / -1}
-        label{display:block;margin-bottom:6px;color:var(--muted);font-size:12px;font-weight:700}
-        input,select{width:100%;background:#071327;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;min-height:42px}
-        table{width:100%;border-collapse:collapse}
-        th,td{border:1px solid var(--line);padding:10px;font-size:13px;text-align:left}
-        th{color:var(--muted)}
-        .ok{color:var(--ok);font-weight:700}.off{color:var(--off);font-weight:700}
-        .stack{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
-        .btn-ghost{border:1px solid var(--line);border-radius:8px;background:#071327;color:var(--muted);padding:8px 10px;font-weight:700;cursor:pointer}
-        .msg{margin-bottom:10px;color:var(--ok)} .err{margin-bottom:10px;color:var(--off)}
-        @media (max-width:900px){.grid{grid-template-columns:1fr}.title{font-size:28px}}
-    </style>
-</head>
-<body>
-<div class="wrap">
-    <div class="top">
+@extends('layouts.tw')
+
+@section('title', 'Admin - Kode Sesi Tes')
+
+@section('content')
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <header class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-            <h1 class="title">Admin Panel</h1>
-            <div class="nav" style="margin-top:10px;">
-                <a class="tab active" href="/admin/sessions">Kode Sesi Tes</a>
-                <a class="tab" href="/admin/positions">Posisi & Kombinasi Tes</a>
-                <a class="tab" href="/admin/custom-tests">Test Builder</a>
-                <a class="tab" href="/handbook?type=DISC" target="_blank">Panduan Tes</a>
+            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">Admin Panel</h1>
+            <div class="mt-4 flex flex-wrap gap-2">
+                <a href="/admin/sessions" class="px-4 py-2 rounded-xl text-sm font-semibold bg-brand-100 text-brand-700 border border-brand-200">Kode Sesi Tes</a>
+                <a href="/admin/positions" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Posisi & Kombinasi Tes</a>
+                <a href="/admin/custom-tests" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Test Builder</a>
+                <a href="/handbook?type=DISC" target="_blank" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Panduan Tes</a>
             </div>
         </div>
-        <form method="POST" action="{{ route('logout') }}">@csrf<button class="btn" type="submit">Logout</button></form>
-    </div>
 
-    <div class="card">
-        @if (session('success'))<div class="msg">{{ session('success') }}</div>@endif
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold">Logout</button>
+        </form>
+    </header>
+
+    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 md:p-7">
+        @if (session('success'))
+            <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 text-sm">{{ session('success') }}</div>
+        @endif
         @if ($errors->any())
-            <div class="err">@foreach ($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>
+            <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 text-sm space-y-1">
+                @foreach ($errors->all() as $error)<div>{{ $error }}</div>@endforeach
+            </div>
         @endif
 
-        <h3 style="margin-top:0;">Buat Kode Akses Sesi</h3>
-        <form method="POST" action="/admin/sessions">
+        <h2 class="text-2xl font-bold text-slate-900 mb-5">Buat Kode Akses Sesi</h2>
+
+        <form method="POST" action="/admin/sessions" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @csrf
-            <div class="grid">
-                <div><label>Nama Sesi</label><input name="name" value="{{ old('name') }}" required></div>
-                <div><label>Kode (custom)</label><input name="code" value="{{ old('code') }}" placeholder="DISC-MEI26" required></div>
-                <div><label>Tipe Tes</label><select name="test_type"><option value="DISC">DISC</option><option value="MBTI">MBTI</option><option value="OTHER">Other</option></select></div>
-                <div><label>Client (pilih)</label><select name="client_id"><option value="">-</option>@foreach($clients as $client)<option value="{{ $client->id }}">{{ $client->name }}</option>@endforeach</select></div>
-                <div><label>Atau Nama Client Baru</label><input name="client_name" value="{{ old('client_name') }}"></div>
-                <div><label>Kedaluwarsa (opsional)</label><input name="expires_at" type="datetime-local" value="{{ old('expires_at') }}"></div>
-                <div class="full"><button class="btn" type="submit">Buat Kode Sesi</button></div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Nama Sesi</label>
+                <input name="name" value="{{ old('name') }}" required class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Kode (custom)</label>
+                <input name="code" value="{{ old('code') }}" placeholder="DISC-MEI26" required class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Tipe Tes</label>
+                <select name="test_type" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+                    <option value="DISC">DISC</option>
+                    <option value="MBTI">MBTI</option>
+                    <option value="OCEAN">OCEAN (Big 5)</option>
+                    <option value="OTHER">Other</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Client (pilih)</label>
+                <select name="client_id" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+                    <option value="">-</option>
+                    @foreach($clients as $client)
+                        <option value="{{ $client->id }}">{{ $client->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Atau Nama Client Baru</label>
+                <input name="client_name" value="{{ old('client_name') }}" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Kedaluwarsa (opsional)</label>
+                <input name="expires_at" type="datetime-local" value="{{ old('expires_at') }}" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div class="md:col-span-2">
+                <button class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold">Buat Kode Sesi</button>
             </div>
         </form>
-    </div>
+    </section>
 
-    <div class="card">
-        <h3 style="margin-top:0;">Daftar Sesi</h3>
-        <table>
-            <thead>
-                <tr><th>Kode</th><th>Nama Sesi</th><th>Tipe</th><th>Client</th><th>Status</th><th>Aksi</th></tr>
-            </thead>
-            <tbody>
-                @forelse($sessions as $session)
-                    <tr>
-                        <td><strong>{{ $session->code }}</strong></td>
-                        <td>{{ $session->name }}</td>
-                        <td>{{ $session->test_type }}</td>
-                        <td>{{ $session->client->name ?? '-' }}</td>
-                        <td class="{{ $session->is_active ? 'ok' : 'off' }}">{{ $session->is_active ? 'Aktif' : 'Nonaktif' }}</td>
-                        <td>
-                            <div class="stack">
-                                <form method="POST" action="/admin/sessions/{{ $session->id }}/toggle">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button class="btn" type="submit">{{ $session->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
-                                </form>
-                                <details>
-                                    <summary style="cursor:pointer;color:var(--muted);font-weight:700;">Edit</summary>
-                                    <form method="POST" action="/admin/sessions/{{ $session->id }}" style="margin-top:8px;">
-                                        @csrf
-                                        @method('PATCH')
-                                        <div class="stack">
-                                            <input name="name" value="{{ $session->name }}" required>
-                                            <input name="code" value="{{ $session->code }}" required>
-                                            <select name="test_type">
-                                                <option value="DISC" @selected($session->test_type === 'DISC')>DISC</option>
-                                                <option value="MBTI" @selected($session->test_type === 'MBTI')>MBTI</option>
-                                                <option value="OTHER" @selected($session->test_type === 'OTHER')>Other</option>
+    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 md:p-7">
+        <h2 class="text-2xl font-bold text-slate-900 mb-5">Daftar Sesi</h2>
+
+        <div class="hidden xl:block overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="text-left text-slate-500 border-b border-slate-200">
+                        <th class="py-3 pr-4">Kode</th>
+                        <th class="py-3 pr-4">Nama Sesi</th>
+                        <th class="py-3 pr-4">Tipe</th>
+                        <th class="py-3 pr-4">Client</th>
+                        <th class="py-3 pr-4">Status</th>
+                        <th class="py-3">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($sessions as $session)
+                        <tr class="border-b border-slate-100 align-top">
+                            <td class="py-4 pr-4 font-semibold">{{ $session->code }}</td>
+                            <td class="py-4 pr-4">{{ $session->name }}</td>
+                            <td class="py-4 pr-4">{{ $session->test_type }}</td>
+                            <td class="py-4 pr-4">{{ $session->client->name ?? '-' }}</td>
+                            <td class="py-4 pr-4">
+                                <span class="font-semibold {{ $session->is_active ? 'text-emerald-600' : 'text-rose-600' }}">{{ $session->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+                            </td>
+                            <td class="py-4">
+                                <div class="space-y-2">
+                                    <form method="POST" action="/admin/sessions/{{ $session->id }}/toggle">
+                                        @csrf @method('PATCH')
+                                        <button class="px-3 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">{{ $session->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
+                                    </form>
+
+                                    <details>
+                                        <summary class="cursor-pointer text-brand-700 font-semibold">Edit</summary>
+                                        <form method="POST" action="/admin/sessions/{{ $session->id }}" class="mt-2 grid grid-cols-1 gap-2 max-w-sm">
+                                            @csrf @method('PATCH')
+                                            <input name="name" value="{{ $session->name }}" required class="rounded-lg border-slate-300">
+                                            <input name="code" value="{{ $session->code }}" required class="rounded-lg border-slate-300">
+                                            <select name="test_type" class="rounded-lg border-slate-300">
+                                                <option value="DISC" @selected($session->test_type==='DISC')>DISC</option>
+                                                <option value="MBTI" @selected($session->test_type==='MBTI')>MBTI</option>
+                                                <option value="OCEAN" @selected($session->test_type==='OCEAN')>OCEAN (Big 5)</option>
+                                                <option value="OTHER" @selected($session->test_type==='OTHER')>Other</option>
                                             </select>
-                                            <select name="client_id">
+                                            <select name="client_id" class="rounded-lg border-slate-300">
                                                 <option value="">-</option>
                                                 @foreach($clients as $client)
                                                     <option value="{{ $client->id }}" @selected($session->client_id === $client->id)>{{ $client->name }}</option>
                                                 @endforeach
                                             </select>
-                                            <input name="client_name" placeholder="Atau nama client baru">
-                                            <input name="expires_at" type="datetime-local" value="{{ $session->expires_at?->format('Y-m-d\\TH:i') }}">
-                                            <button class="btn-ghost" type="submit">Simpan Edit</button>
-                                        </div>
+                                            <input name="client_name" placeholder="Atau nama client baru" class="rounded-lg border-slate-300">
+                                            <input name="expires_at" type="datetime-local" value="{{ $session->expires_at?->format('Y-m-d\\TH:i') }}" class="rounded-lg border-slate-300">
+                                            <button class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold">Simpan Edit</button>
+                                        </form>
+                                    </details>
+
+                                    <form method="POST" action="/admin/sessions/{{ $session->id }}" onsubmit="return confirm('Hapus sesi ini?');">
+                                        @csrf @method('DELETE')
+                                        <button class="px-3 py-2 rounded-lg border border-rose-300 text-rose-700 font-semibold">Hapus</button>
                                     </form>
-                                </details>
-                                <form method="POST" action="/admin/sessions/{{ $session->id }}" onsubmit="return confirm('Hapus sesi ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="btn-ghost" type="submit">Hapus</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr><td colspan="6">Belum ada sesi.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-        <div style="margin-top:12px;">{{ $sessions->links() }}</div>
-    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" class="py-6 text-slate-500">Belum ada sesi.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 xl:hidden">
+            @forelse($sessions as $session)
+                <article class="rounded-xl border border-slate-200 p-4 bg-slate-50 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <h3 class="font-bold text-slate-900">{{ $session->code }}</h3>
+                        <span class="text-sm font-semibold {{ $session->is_active ? 'text-emerald-600' : 'text-rose-600' }}">{{ $session->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+                    </div>
+                    <div class="text-sm text-slate-700">{{ $session->name }}</div>
+                    <div class="text-sm text-slate-500">{{ $session->test_type }} • {{ $session->client->name ?? '-' }}</div>
+                    <div class="flex flex-wrap gap-2 pt-2">
+                        <form method="POST" action="/admin/sessions/{{ $session->id }}/toggle">@csrf @method('PATCH')<button class="px-3 py-2 rounded-lg bg-brand-500 text-white text-sm font-semibold">{{ $session->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button></form>
+                        <form method="POST" action="/admin/sessions/{{ $session->id }}" onsubmit="return confirm('Hapus sesi ini?');">@csrf @method('DELETE')<button class="px-3 py-2 rounded-lg border border-rose-300 text-rose-700 text-sm font-semibold">Hapus</button></form>
+                    </div>
+                </article>
+            @empty
+                <div class="text-slate-500">Belum ada sesi.</div>
+            @endforelse
+        </div>
+
+        <div class="mt-4">{{ $sessions->links() }}</div>
+    </section>
 </div>
-</body>
-</html>
+@endsection

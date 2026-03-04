@@ -9,7 +9,7 @@ class DiscHandbookController extends Controller
     public function index(Request $request)
     {
         $type = strtoupper($request->query('type', 'DISC'));
-        $availableTypes = ['DISC', 'MBTI'];
+        $availableTypes = ['DISC', 'MBTI', 'OCEAN'];
 
         if (!in_array($type, $availableTypes, true)) {
             $type = 'DISC';

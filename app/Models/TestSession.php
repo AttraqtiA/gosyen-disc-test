@@ -34,4 +34,9 @@ class TestSession extends Model
     {
         return $this->hasMany(MbtiTest::class, 'test_session_id');
     }
+
+    public function oceanTests()
+    {
+        return $this->hasMany(OceanTest::class, 'test_session_id');
+    }
 }

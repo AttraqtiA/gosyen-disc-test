@@ -1,129 +1,186 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Test Builder</title>
-    <style>
-        :root { --bg:#030b1d; --line:#1f3d68; --text:#e6f1ff; --muted:#94acd0; --ok:#7ef9b6; --off:#ffc5de; --accent:#5ce8ff; --accent2:#35d0f5; }
-        *{box-sizing:border-box}
-        body{margin:0;font-family:Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 12% 18%, rgba(73,224,255,.18), transparent 38%),radial-gradient(circle at 90% 12%, rgba(73,126,255,.18), transparent 34%),var(--bg);padding:24px 16px}
-        .wrap{max-width:1240px;margin:0 auto}
-        .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
-        .title{margin:0;font-size:32px}
-        .nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-        .tab{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid var(--line);text-decoration:none;color:var(--muted);font-weight:700}
-        .tab.active{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#032137;border-color:transparent}
-        .card{background:linear-gradient(180deg, rgba(13,32,66,.96), rgba(8,21,45,.98));border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
-        .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-        .full{grid-column:1 / -1}
-        label{display:block;margin-bottom:6px;color:var(--muted);font-size:12px;font-weight:700}
-        input,textarea{width:100%;background:#071327;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;min-height:42px}
-        textarea{min-height:80px;resize:vertical}
-        table{width:100%;border-collapse:collapse}
-        th,td{border:1px solid var(--line);padding:10px;font-size:13px;text-align:left;vertical-align:top}
-        th{color:var(--muted)}
-        .btn{border:0;border-radius:10px;background:linear-gradient(180deg,var(--accent),var(--accent2));color:#032137;padding:10px 14px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-block}
-        .btn-ghost{border:1px solid var(--line);border-radius:8px;background:#071327;color:var(--muted);padding:8px 10px;font-weight:700;cursor:pointer}
-        .stack{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
-        .ok{color:var(--ok);font-weight:700}
-        .off{color:var(--off);font-weight:700}
-        .msg{margin-bottom:10px;color:var(--ok)}
-        .err{margin-bottom:10px;color:var(--off)}
-        @media (max-width:900px){.grid{grid-template-columns:1fr}.title{font-size:28px}}
-    </style>
-</head>
-<body>
-<div class="wrap">
-    <div class="top">
+@extends('layouts.tw')
+
+@section('title', 'Admin - Test Builder')
+
+@section('content')
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <header class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-            <h1 class="title">Admin Panel</h1>
-            <div class="nav">
-                <a class="tab" href="/admin/sessions">Kode Sesi Tes</a>
-                <a class="tab" href="/admin/positions">Posisi & Kombinasi Tes</a>
-                <a class="tab active" href="/admin/custom-tests">Test Builder</a>
-                <a class="tab" href="/handbook?type=DISC" target="_blank">Panduan Tes</a>
+            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">Admin Panel</h1>
+            <div class="mt-4 flex flex-wrap gap-2">
+                <a href="/admin/sessions" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Kode Sesi Tes</a>
+                <a href="/admin/positions" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Posisi & Kombinasi Tes</a>
+                <a href="/admin/custom-tests" class="px-4 py-2 rounded-xl text-sm font-semibold bg-brand-100 text-brand-700 border border-brand-200">Test Builder</a>
+                <a href="/handbook?type=DISC" target="_blank" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Panduan Tes</a>
             </div>
         </div>
-        <form method="POST" action="{{ route('logout') }}">@csrf<button class="btn" type="submit">Logout</button></form>
-    </div>
 
-    <div class="card">
-        @if (session('success'))<div class="msg">{{ session('success') }}</div>@endif
-        @if ($errors->any())<div class="err">@foreach ($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>@endif
+        <form method="POST" action="{{ route('logout') }}">@csrf
+            <button class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold">Logout</button>
+        </form>
+    </header>
 
-        <h3 style="margin-top:0;">Buat Test Baru (Custom)</h3>
-        <form method="POST" action="/admin/custom-tests">
+    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 md:p-7">
+        @if (session('success'))
+            <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 text-sm">{{ session('success') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 text-sm space-y-1">
+                @foreach ($errors->all() as $error)<div>{{ $error }}</div>@endforeach
+            </div>
+        @endif
+
+        <h2 class="text-2xl font-bold text-slate-900 mb-5">Buat Test Baru (Custom)</h2>
+
+        <form method="POST" action="/admin/custom-tests" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @csrf
-            <div class="grid">
-                <div><label>Nama Test</label><input name="name" value="{{ old('name') }}" required></div>
-                <div><label>Kode Test (unik)</label><input name="code" value="{{ old('code') }}" placeholder="CULTUREFIT" required></div>
-                <div><label>Durasi (menit, opsional)</label><input type="number" name="time_limit_minutes" min="1" max="240" value="{{ old('time_limit_minutes') }}"></div>
-                <div class="full"><label>Deskripsi</label><textarea name="description">{{ old('description') }}</textarea></div>
-                <div class="full"><label>Instruksi Responden</label><textarea name="instructions">{{ old('instructions') }}</textarea></div>
-                <div class="full"><button class="btn" type="submit">Buat Test</button></div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Nama Test</label>
+                <input name="name" value="{{ old('name') }}" required class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Kode Test (unik)</label>
+                <input name="code" value="{{ old('code') }}" placeholder="CULTUREFIT" required class="w-full rounded-xl border-slate-300 uppercase focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Durasi (menit, opsional)</label>
+                <input type="number" name="time_limit_minutes" min="1" max="240" value="{{ old('time_limit_minutes') }}" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Deskripsi</label>
+                <textarea name="description" rows="3" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">{{ old('description') }}</textarea>
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Instruksi Responden</label>
+                <textarea name="instructions" rows="3" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">{{ old('instructions') }}</textarea>
+            </div>
+            <div class="md:col-span-2">
+                <button class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold">Buat Test</button>
             </div>
         </form>
-    </div>
+    </section>
 
-    <div class="card">
-        <h3 style="margin-top:0;">Daftar Custom Test</h3>
-        <table>
-            <thead>
-                <tr><th>Kode</th><th>Nama</th><th>Konten</th><th>Status</th><th>Aksi</th></tr>
-            </thead>
-            <tbody>
+    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 md:p-7">
+        <h2 class="text-2xl font-bold text-slate-900 mb-5">Daftar Custom Test</h2>
+
+        <div class="hidden xl:block overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="text-left text-slate-500 border-b border-slate-200">
+                        <th class="py-3 pr-4">Kode</th>
+                        <th class="py-3 pr-4">Nama</th>
+                        <th class="py-3 pr-4">Konten</th>
+                        <th class="py-3 pr-4">Status</th>
+                        <th class="py-3">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
                 @forelse($tests as $test)
-                    <tr>
-                        <td><strong>{{ $test->code }}</strong></td>
-                        <td>
-                            <div><strong>{{ $test->name }}</strong></div>
-                            @if($test->description)<div style="margin-top:6px;color:var(--muted)">{{ $test->description }}</div>@endif
+                    <tr class="border-b border-slate-100 align-top">
+                        <td class="py-4 pr-4 font-semibold">{{ $test->code }}</td>
+                        <td class="py-4 pr-4">
+                            <div class="font-semibold text-slate-900">{{ $test->name }}</div>
+                            @if($test->description)
+                                <div class="text-slate-500 mt-1">{{ $test->description }}</div>
+                            @endif
                         </td>
-                        <td>
+                        <td class="py-4 pr-4 text-slate-700">
                             <div>{{ $test->dimensions_count }} dimensi</div>
                             <div>{{ $test->questions_count }} pertanyaan</div>
                             <div>Durasi: {{ $test->time_limit_minutes ? $test->time_limit_minutes . ' menit' : 'Tidak dibatasi' }}</div>
                         </td>
-                        <td class="{{ $test->is_active ? 'ok' : 'off' }}">{{ $test->is_active ? 'Aktif' : 'Nonaktif' }}</td>
-                        <td>
-                            <div class="stack">
-                                <a class="btn" href="/admin/custom-tests/{{ $test->id }}">Buka Builder</a>
+                        <td class="py-4 pr-4">
+                            <span class="font-semibold {{ $test->is_active ? 'text-emerald-600' : 'text-rose-600' }}">{{ $test->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+                        </td>
+                        <td class="py-4">
+                            <div class="flex flex-wrap gap-2 max-w-xl">
+                                <a href="/admin/custom-tests/{{ $test->id }}" class="px-3 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">Buka Builder</a>
                                 <form method="POST" action="/admin/custom-tests/{{ $test->id }}/toggle">
                                     @csrf
                                     @method('PATCH')
-                                    <button class="btn" type="submit">{{ $test->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
+                                    <button type="submit" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50">{{ $test->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
                                 </form>
-                                <details>
-                                    <summary style="cursor:pointer;color:var(--muted);font-weight:700;">Edit</summary>
-                                    <form method="POST" action="/admin/custom-tests/{{ $test->id }}" style="margin-top:8px;">
-                                        @csrf
-                                        @method('PATCH')
-                                        <div class="stack">
-                                            <input name="name" value="{{ $test->name }}" required>
-                                            <input name="code" value="{{ $test->code }}" required>
-                                            <input type="number" name="time_limit_minutes" min="1" max="240" value="{{ $test->time_limit_minutes }}">
-                                            <textarea name="description">{{ $test->description }}</textarea>
-                                            <textarea name="instructions">{{ $test->instructions }}</textarea>
-                                            <button class="btn-ghost" type="submit">Simpan Edit</button>
-                                        </div>
-                                    </form>
-                                </details>
+                                <button type="button" data-edit-toggle="{{ $test->id }}" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50">Edit</button>
                                 <form method="POST" action="/admin/custom-tests/{{ $test->id }}" onsubmit="return confirm('Hapus custom test ini? Semua dimensi, pertanyaan, opsi, dan rule posisi ikut terhapus.');">
                                     @csrf
                                     @method('DELETE')
-                                    <button class="btn-ghost" type="submit">Hapus</button>
+                                    <button type="submit" class="px-3 py-2 rounded-lg border border-rose-300 text-rose-700 font-semibold hover:bg-rose-50">Hapus</button>
+                                </form>
+                            </div>
+
+                            <div id="edit-form-{{ $test->id }}" class="hidden mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 max-w-xl">
+                                <form method="POST" action="/admin/custom-tests/{{ $test->id }}" class="grid grid-cols-1 gap-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input name="name" value="{{ $test->name }}" required class="rounded-lg border-slate-300 text-sm">
+                                    <input name="code" value="{{ $test->code }}" required class="rounded-lg border-slate-300 text-sm uppercase">
+                                    <input type="number" name="time_limit_minutes" min="1" max="240" value="{{ $test->time_limit_minutes }}" class="rounded-lg border-slate-300 text-sm">
+                                    <textarea name="description" rows="2" class="rounded-lg border-slate-300 text-sm">{{ $test->description }}</textarea>
+                                    <textarea name="instructions" rows="2" class="rounded-lg border-slate-300 text-sm">{{ $test->instructions }}</textarea>
+                                    <div>
+                                        <button type="submit" class="px-3 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold">Simpan Edit</button>
+                                    </div>
                                 </form>
                             </div>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5">Belum ada custom test.</td></tr>
+                    <tr><td colspan="5" class="py-6 text-slate-500">Belum ada custom test.</td></tr>
                 @endforelse
-            </tbody>
-        </table>
-        <div style="margin-top:12px;">{{ $tests->links() }}</div>
-    </div>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 xl:hidden">
+            @forelse($tests as $test)
+                <article class="rounded-xl border border-slate-200 p-4 bg-slate-50 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <h3 class="font-bold text-slate-900">{{ $test->code }}</h3>
+                        <span class="text-sm font-semibold {{ $test->is_active ? 'text-emerald-600' : 'text-rose-600' }}">{{ $test->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+                    </div>
+                    <div class="font-semibold text-slate-800">{{ $test->name }}</div>
+                    <div class="text-sm text-slate-600">{{ $test->dimensions_count }} dimensi • {{ $test->questions_count }} pertanyaan • {{ $test->time_limit_minutes ? $test->time_limit_minutes . ' menit' : 'Tidak dibatasi' }}</div>
+                    @if($test->description)<div class="text-sm text-slate-500">{{ $test->description }}</div>@endif
+
+                    <div class="flex flex-wrap gap-2 pt-2">
+                        <a href="/admin/custom-tests/{{ $test->id }}" class="px-3 py-2 rounded-lg bg-brand-500 text-white text-sm font-semibold">Buka Builder</a>
+                        <form method="POST" action="/admin/custom-tests/{{ $test->id }}/toggle">@csrf @method('PATCH')<button class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold">{{ $test->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button></form>
+                        <button type="button" data-edit-toggle="{{ $test->id }}" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold">Edit</button>
+                        <form method="POST" action="/admin/custom-tests/{{ $test->id }}" onsubmit="return confirm('Hapus custom test ini? Semua dimensi, pertanyaan, opsi, dan rule posisi ikut terhapus.');">@csrf @method('DELETE')<button class="px-3 py-2 rounded-lg border border-rose-300 text-rose-700 text-sm font-semibold">Hapus</button></form>
+                    </div>
+
+                    <div id="edit-form-mobile-{{ $test->id }}" class="hidden mt-2 rounded-xl border border-slate-200 bg-white p-3">
+                        <form method="POST" action="/admin/custom-tests/{{ $test->id }}" class="grid grid-cols-1 gap-2">
+                            @csrf @method('PATCH')
+                            <input name="name" value="{{ $test->name }}" required class="rounded-lg border-slate-300 text-sm">
+                            <input name="code" value="{{ $test->code }}" required class="rounded-lg border-slate-300 text-sm uppercase">
+                            <input type="number" name="time_limit_minutes" min="1" max="240" value="{{ $test->time_limit_minutes }}" class="rounded-lg border-slate-300 text-sm">
+                            <textarea name="description" rows="2" class="rounded-lg border-slate-300 text-sm">{{ $test->description }}</textarea>
+                            <textarea name="instructions" rows="2" class="rounded-lg border-slate-300 text-sm">{{ $test->instructions }}</textarea>
+                            <button type="submit" class="px-3 py-2 rounded-lg bg-brand-500 text-white text-sm font-semibold">Simpan Edit</button>
+                        </form>
+                    </div>
+                </article>
+            @empty
+                <div class="text-slate-500">Belum ada custom test.</div>
+            @endforelse
+        </div>
+
+        <div class="mt-4">{{ $tests->links() }}</div>
+    </section>
 </div>
-</body>
-</html>
+@endsection
+
+@section('scripts')
+<script>
+    document.querySelectorAll('[data-edit-toggle]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const id = button.getAttribute('data-edit-toggle');
+            const desktop = document.getElementById(`edit-form-${id}`);
+            const mobile = document.getElementById(`edit-form-mobile-${id}`);
+            if (desktop) desktop.classList.toggle('hidden');
+            if (mobile) mobile.classList.toggle('hidden');
+        });
+    });
+</script>
+@endsection

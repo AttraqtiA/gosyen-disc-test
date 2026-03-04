@@ -1,133 +1,62 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hasil Tes Kepribadian</title>
-    <style>
-        :root {
-            --bg: #030b1d;
-            --panel: #08152d;
-            --panel-soft: #0d2042;
-            --line: #1f3d68;
-            --text: #e6f1ff;
-            --muted: #94acd0;
-            --accent: #5ce8ff;
-            --accent-2: #35d0f5;
-        }
+@extends('layouts.tw')
 
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: Arial, sans-serif;
-            color: var(--text);
-            background:
-                radial-gradient(circle at 12% 18%, rgba(73, 224, 255, 0.18), transparent 38%),
-                radial-gradient(circle at 90% 12%, rgba(73, 126, 255, 0.18), transparent 34%),
-                var(--bg);
-            padding: 32px 16px;
-        }
+@section('title', 'Hasil Tes Kepribadian DISC')
 
-        .container {
-            max-width: 780px;
-            margin: 0 auto;
-            background: linear-gradient(180deg, rgba(13, 32, 66, 0.96), rgba(8, 21, 45, 0.98));
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
-        }
-
-        h1 { margin-top: 0; }
-
-        .card {
-            margin-top: 14px;
-            padding: 14px;
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            background: #071327;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .muted { color: var(--muted); }
-
-        .warning {
-            margin-top: 10px;
-            padding: 10px 12px;
-            border: 1px solid rgba(92, 232, 255, 0.5);
-            background: rgba(92, 232, 255, 0.12);
-            color: #bff7ff;
-            border-radius: 8px;
-        }
-
-        a {
-            display: inline-block;
-            margin-top: 18px;
-            text-decoration: none;
-            color: #032137;
-            font-weight: 800;
-            background: linear-gradient(180deg, var(--accent), var(--accent-2));
-            border-radius: 10px;
-            padding: 10px 14px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Hasil Tes Kepribadian</h1>
-        <p class="muted">Terima kasih, {{ $test->nama }}.</p>
-        <p><a href="/handbook?type=DISC" style="text-decoration:none;color:#032137;background:linear-gradient(180deg,var(--accent),var(--accent-2));padding:8px 12px;border-radius:8px;font-weight:700;display:inline-block;">Lihat Panduan Tes</a></p>
+@section('content')
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-4">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-7">
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">Hasil Tes Kepribadian DISC</h1>
+        <p class="mt-2 text-slate-600">Terima kasih, {{ $test->nama }}.</p>
+        <a href="/handbook?type=DISC" class="mt-4 inline-flex items-center justify-center rounded-xl bg-brand-500 px-5 py-2.5 text-white font-bold hover:bg-brand-600">Lihat Panduan Tes</a>
 
         @if (session('warning'))
-            <div class="warning">{{ session('warning') }}</div>
+            <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">{{ session('warning') }}</div>
         @endif
-
-        <div class="card">
-            <div><strong>Status Jawaban:</strong> {{ $answered }} / {{ $totalQuestions }} nomor terisi.</div>
-            <div><strong>Institusi:</strong> {{ $test->institusi_perusahaan }}</div>
-            <div><strong>Departemen/Divisi:</strong> {{ $test->departemen_divisi }}</div>
-            <div><strong>Tanggal Tes:</strong> {{ $test->tanggal_tes?->format('d-m-Y') }}</div>
-        </div>
-
-        <div class="card">
-            <div><strong>Skor D:</strong> {{ $result->d_score }}</div>
-            <div><strong>Skor I:</strong> {{ $result->i_score }}</div>
-            <div><strong>Skor S:</strong> {{ $result->s_score }}</div>
-            <div><strong>Skor C:</strong> {{ $result->c_score }}</div>
-            <div><strong>Tipe Dominan:</strong> {{ $result->dominant_type ?: '-' }}</div>
-        </div>
-
-        <div class="card">
-            <strong>Rekomendasi Posisi (Deterministic Matching)</strong>
-            @if ($recommendations->isEmpty())
-                <div class="muted" style="margin-top:8px;">Belum ada benchmark posisi aktif untuk client ini.</div>
-            @else
-                <ol style="margin-top:8px; padding-left:18px;">
-                    @foreach ($recommendations->take(5) as $rec)
-                        @php
-                            $clientNames = $hasClientPosition ? $rec->position->clients->pluck('name')->implode(', ') : '';
-                            $fallbackClient = $rec->position->client->name ?? '-';
-                            $displayClient = $clientNames !== '' ? $clientNames : $fallbackClient;
-                        @endphp
-                        <li>
-                            {{ $rec->position->title }}
-                            ({{ $displayClient }}) - Skor: {{ number_format($rec->match_score, 2) }}
-                        </li>
-                    @endforeach
-                </ol>
-            @endif
-        </div>
-
-        @if (!empty($narrative))
-            <div class="card">
-                <strong>Narasi AI (Opsional)</strong>
-                <p style="margin:8px 0 0;" class="muted">{{ $narrative }}</p>
-            </div>
-        @endif
-
-        <a href="/">Mulai Tes Baru</a>
     </div>
-</body>
-</html>
+
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-7 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+        <div><strong>Status Jawaban:</strong> {{ $answered }} / {{ $totalQuestions }} nomor terisi.</div>
+        <div><strong>Tanggal Tes:</strong> {{ $test->tanggal_tes?->format('d-m-Y') }}</div>
+        <div><strong>Institusi:</strong> {{ $test->institusi_perusahaan }}</div>
+        <div><strong>Departemen/Divisi:</strong> {{ $test->departemen_divisi }}</div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-7">
+        <h2 class="text-xl font-bold text-slate-900 mb-3">Skor DISC</h2>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>D:</strong> {{ $result->d_score }}</div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>I:</strong> {{ $result->i_score }}</div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>S:</strong> {{ $result->s_score }}</div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>C:</strong> {{ $result->c_score }}</div>
+            <div class="rounded-xl border border-brand-200 bg-brand-50 p-3"><strong>Dominan:</strong> {{ $result->dominant_type ?: '-' }}</div>
+        </div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-7">
+        <h2 class="text-xl font-bold text-slate-900 mb-2">Rekomendasi Posisi (Deterministic Matching)</h2>
+        @if ($recommendations->isEmpty())
+            <p class="text-sm text-slate-500">Belum ada benchmark posisi aktif untuk client ini.</p>
+        @else
+            <ol class="list-decimal pl-5 space-y-1 text-sm text-slate-700">
+                @foreach ($recommendations->take(5) as $rec)
+                    @php
+                        $clientNames = $hasClientPosition ? $rec->position->clients->pluck('name')->implode(', ') : '';
+                        $fallbackClient = $rec->position->client->name ?? '-';
+                        $displayClient = $clientNames !== '' ? $clientNames : $fallbackClient;
+                    @endphp
+                    <li>{{ $rec->position->title }} ({{ $displayClient }}) - Skor: {{ number_format($rec->match_score, 2) }}</li>
+                @endforeach
+            </ol>
+        @endif
+    </div>
+
+    @if (!empty($narrative))
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-7">
+            <h2 class="text-xl font-bold text-slate-900 mb-2">Narasi AI (Opsional)</h2>
+            <p class="text-sm text-slate-600">{{ $narrative }}</p>
+        </div>
+    @endif
+
+    <a href="/" class="inline-flex items-center justify-center rounded-xl bg-brand-500 px-5 py-2.5 text-white font-bold hover:bg-brand-600">Mulai Tes Baru</a>
+</div>
+@endsection

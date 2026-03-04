@@ -1,51 +1,42 @@
 @extends('layouts.tw')
 
-@section('title', 'Hasil Tes MBTI')
+@section('title', 'Hasil Tes OCEAN')
 
 @section('content')
 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-4">
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-7">
-        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">Hasil Tes Kepribadian MBTI</h1>
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">Hasil Tes OCEAN (Big 5)</h1>
         <p class="mt-2 text-slate-600">Terima kasih, {{ $test->nama }}.</p>
-        <a href="/handbook?type=MBTI" class="mt-4 inline-flex items-center justify-center rounded-xl bg-brand-500 px-5 py-2.5 text-white font-bold hover:bg-brand-600">Lihat Panduan MBTI</a>
+        <a href="/handbook?type=OCEAN" class="mt-4 inline-flex items-center justify-center rounded-xl bg-brand-500 px-5 py-2.5 text-white font-bold hover:bg-brand-600">Lihat Panduan OCEAN</a>
 
         @if (session('warning'))
             <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">{{ session('warning') }}</div>
         @endif
     </div>
 
-    @php
-        $pair = function ($a, $b) {
-            $sum = $a + $b;
-            if ($sum <= 0) return [50.0, 50.0];
-            return [round(($a / $sum) * 100, 2), round(($b / $sum) * 100, 2)];
-        };
-        [$ePct, $iPct] = $pair($result->e_score, $result->i_score);
-        [$sPct, $nPct] = $pair($result->s_score, $result->n_score);
-        [$tPct, $fPct] = $pair($result->t_score, $result->f_score);
-        [$jPct, $pPct] = $pair($result->j_score, $result->p_score);
-    @endphp
-
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-7 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
         <div><strong>Status Jawaban:</strong> {{ $answered }} / {{ $totalQuestions }} nomor terisi.</div>
         <div><strong>Tanggal Tes:</strong> {{ $test->tanggal_tes?->format('d-m-Y') }}</div>
         <div><strong>Institusi:</strong> {{ $test->institusi_perusahaan }}</div>
         <div><strong>Departemen/Divisi:</strong> {{ $test->departemen_divisi }}</div>
-        <div class="sm:col-span-2"><span class="inline-flex rounded-full bg-brand-50 border border-brand-200 px-3 py-1 text-sm font-semibold text-brand-700">Tipe MBTI: {{ $result->type_code ?: '-' }}</span></div>
+        <div class="sm:col-span-2"><span class="inline-flex rounded-full bg-brand-50 border border-brand-200 px-3 py-1 text-sm font-semibold text-brand-700">Trait Dominan: {{ $result->dominant_trait ?: '-' }}</span></div>
     </div>
 
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-7 text-sm space-y-1">
-        <h2 class="text-xl font-bold text-slate-900 mb-2">Distribusi Dimensi</h2>
-        <div>E {{ $result->e_score }} ({{ $ePct }}%) vs I {{ $result->i_score }} ({{ $iPct }}%)</div>
-        <div>S {{ $result->s_score }} ({{ $sPct }}%) vs N {{ $result->n_score }} ({{ $nPct }}%)</div>
-        <div>T {{ $result->t_score }} ({{ $tPct }}%) vs F {{ $result->f_score }} ({{ $fPct }}%)</div>
-        <div>J {{ $result->j_score }} ({{ $jPct }}%) vs P {{ $result->p_score }} ({{ $pPct }}%)</div>
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-7">
+        <h2 class="text-xl font-bold text-slate-900 mb-3">Skor OCEAN</h2>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>O:</strong> {{ $result->o_score }}</div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>C:</strong> {{ $result->c_score }}</div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>E:</strong> {{ $result->e_score }}</div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>A:</strong> {{ $result->a_score }}</div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>N:</strong> {{ $result->n_score }}</div>
+        </div>
     </div>
 
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-7">
         <h2 class="text-xl font-bold text-slate-900 mb-2">Rekomendasi Posisi (Deterministic Matching)</h2>
         @if ($recommendations->isEmpty())
-            <p class="text-sm text-slate-500">Belum ada benchmark posisi MBTI aktif untuk client ini.</p>
+            <p class="text-sm text-slate-500">Belum ada benchmark posisi OCEAN aktif untuk client ini.</p>
         @else
             <ol class="list-decimal pl-5 space-y-1 text-sm text-slate-700">
                 @foreach ($recommendations->take(5) as $rec)

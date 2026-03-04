@@ -1,172 +1,188 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Builder - {{ $test->name }}</title>
-    <style>
-        :root { --bg:#030b1d; --line:#1f3d68; --text:#e6f1ff; --muted:#94acd0; --ok:#7ef9b6; --off:#ffc5de; --accent:#5ce8ff; --accent2:#35d0f5; }
-        *{box-sizing:border-box}
-        body{margin:0;font-family:Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 12% 18%, rgba(73,224,255,.18), transparent 38%),radial-gradient(circle at 90% 12%, rgba(73,126,255,.18), transparent 34%),var(--bg);padding:24px 16px}
-        .wrap{max-width:1300px;margin:0 auto}
-        .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
-        .title{margin:0;font-size:30px}
-        .muted{color:var(--muted)}
-        .nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-        .tab{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid var(--line);text-decoration:none;color:var(--muted);font-weight:700}
-        .tab.active{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#032137;border-color:transparent}
-        .card{background:linear-gradient(180deg, rgba(13,32,66,.96), rgba(8,21,45,.98));border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
-        .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-        .grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-        .full{grid-column:1 / -1}
-        label{display:block;margin-bottom:6px;color:var(--muted);font-size:12px;font-weight:700}
-        input,textarea,select{width:100%;background:#071327;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;min-height:42px}
-        textarea{min-height:76px;resize:vertical}
-        .btn{border:0;border-radius:10px;background:linear-gradient(180deg,var(--accent),var(--accent2));color:#032137;padding:10px 14px;font-weight:800;cursor:pointer}
-        .pill{display:inline-block;padding:5px 10px;border-radius:999px;background:rgba(92,232,255,.12);border:1px solid rgba(92,232,255,.35);color:#bff7ff;font-size:12px;font-weight:700;margin-right:6px;margin-bottom:6px}
-        .msg{margin-bottom:10px;color:var(--ok)}
-        .err{margin-bottom:10px;color:var(--off)}
-        .section-title{margin:0 0 12px}
-        .list{margin:0;padding-left:18px}
-        .q{border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px;background:#071327}
-        table{width:100%;border-collapse:collapse}
-        th,td{border:1px solid var(--line);padding:10px;font-size:13px;text-align:left;vertical-align:top}
-        th{color:var(--muted)}
-        @media (max-width:1000px){.grid,.grid-4{grid-template-columns:1fr}.title{font-size:26px}}
-    </style>
-</head>
-<body>
-<div class="wrap">
-    <div class="top">
+@extends('layouts.tw')
+
+@section('title', 'Builder - ' . $test->name)
+
+@section('content')
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <header class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-            <h1 class="title">Builder: {{ $test->name }} <span class="muted">({{ $test->code }})</span></h1>
-            <div class="nav">
-                <a class="tab" href="/admin/sessions">Kode Sesi Tes</a>
-                <a class="tab" href="/admin/positions">Posisi & Kombinasi Tes</a>
-                <a class="tab active" href="/admin/custom-tests">Test Builder</a>
+            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">Builder: {{ $test->name }} <span class="text-slate-400">({{ $test->code }})</span></h1>
+            <div class="mt-4 flex flex-wrap gap-2">
+                <a href="/admin/sessions" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Kode Sesi Tes</a>
+                <a href="/admin/positions" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Posisi & Kombinasi Tes</a>
+                <a href="/admin/custom-tests" class="px-4 py-2 rounded-xl text-sm font-semibold bg-brand-100 text-brand-700 border border-brand-200">Test Builder</a>
             </div>
         </div>
-        <div>
-            <a class="tab" href="/admin/custom-tests">Kembali ke daftar</a>
+
+        <a href="/admin/custom-tests" class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50">Kembali ke daftar</a>
+    </header>
+
+    @if (session('success'))
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 text-sm">{{ session('success') }}</div>
+    @endif
+    @if ($errors->any())
+        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 text-sm space-y-1">
+            @foreach ($errors->all() as $error)<div>{{ $error }}</div>@endforeach
         </div>
-    </div>
+    @endif
 
-    <div class="card">
-        @if (session('success'))<div class="msg">{{ session('success') }}</div>@endif
-        @if ($errors->any())<div class="err">@foreach ($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>@endif
+    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 md:p-7">
+        <h2 class="text-xl font-bold text-slate-900">Info Test</h2>
+        <p class="mt-2 text-slate-600">{{ $test->description ?: 'Tidak ada deskripsi.' }}</p>
+        <div class="mt-3 text-sm text-slate-700">Durasi: {{ $test->time_limit_minutes ? $test->time_limit_minutes . ' menit' : 'Tidak dibatasi' }}</div>
+        @if($test->instructions)
+            <div class="mt-2 text-sm text-slate-600">Instruksi: {{ $test->instructions }}</div>
+        @endif
+    </section>
 
-        <h3 class="section-title">Info Test</h3>
-        <div class="muted">{{ $test->description ?: 'Tidak ada deskripsi.' }}</div>
-        <div style="margin-top:8px;">Durasi: {{ $test->time_limit_minutes ? $test->time_limit_minutes . ' menit' : 'Tidak dibatasi' }}</div>
-        @if($test->instructions)<div style="margin-top:6px;" class="muted">Instruksi: {{ $test->instructions }}</div>@endif
-    </div>
+    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 md:p-7 space-y-4">
+        <h2 class="text-xl font-bold text-slate-900">1) Dimensi Skoring</h2>
 
-    <div class="card">
-        <h3 class="section-title">1) Dimensi Skoring</h3>
-        <div style="margin-bottom:10px;">
+        <div class="flex flex-wrap gap-2">
             @forelse($test->dimensions as $dimension)
-                <span class="pill">{{ $dimension->code }} - {{ $dimension->name }} (w{{ $dimension->weight }})</span>
+                <span class="inline-flex rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">{{ $dimension->code }} - {{ $dimension->name }} (w{{ $dimension->weight }})</span>
             @empty
-                <span class="muted">Belum ada dimensi. Tambahkan dulu sebelum membuat logic skor jawaban.</span>
+                <span class="text-sm text-slate-500">Belum ada dimensi. Tambahkan dulu sebelum membuat logic skor jawaban.</span>
             @endforelse
         </div>
 
-        <form method="POST" action="/admin/custom-tests/{{ $test->id }}/dimensions">
+        <form method="POST" action="/admin/custom-tests/{{ $test->id }}/dimensions" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             @csrf
-            <div class="grid">
-                <div><label>Kode Dimensi</label><input name="code" placeholder="LEADERSHIP" required></div>
-                <div><label>Nama Dimensi</label><input name="name" placeholder="Leadership" required></div>
-                <div><label>Bobot</label><input type="number" min="1" max="10" name="weight" value="1"></div>
-                <div><label>Urutan</label><input type="number" min="1" max="999" name="sort_order"></div>
-                <div class="full"><button class="btn" type="submit">Simpan Dimensi</button></div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Kode Dimensi</label>
+                <input name="code" placeholder="LEADERSHIP" required class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Nama Dimensi</label>
+                <input name="name" placeholder="Leadership" required class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Bobot</label>
+                <input type="number" min="1" max="10" name="weight" value="1" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Urutan</label>
+                <input type="number" min="1" max="999" name="sort_order" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div class="md:col-span-2 xl:col-span-4">
+                <button class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold">Simpan Dimensi</button>
             </div>
         </form>
-    </div>
+    </section>
 
-    <div class="card">
-        <h3 class="section-title">2) Pertanyaan & Jawaban + Logic Skor</h3>
-        <form method="POST" action="/admin/custom-tests/{{ $test->id }}/questions">
+    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 md:p-7 space-y-4">
+        <h2 class="text-xl font-bold text-slate-900">2) Pertanyaan & Jawaban + Logic Skor</h2>
+
+        <form method="POST" action="/admin/custom-tests/{{ $test->id }}/questions" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @csrf
-            <div class="grid">
-                <div class="full"><label>Pertanyaan</label><textarea name="question_text" required></textarea></div>
-                <div><label>Urutan Soal</label><input type="number" min="1" max="9999" name="sort_order"></div>
-                <div><label><input type="checkbox" name="is_required" value="1" checked style="width:auto;min-height:0;"> Wajib dijawab</label></div>
-                <div class="full"><button class="btn" type="submit">Tambah Pertanyaan</button></div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Pertanyaan</label>
+                <textarea name="question_text" rows="3" required class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Urutan Soal</label>
+                <input type="number" min="1" max="9999" name="sort_order" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div class="flex items-end">
+                <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <input type="checkbox" name="is_required" value="1" checked class="rounded border-slate-300 text-brand-500 focus:ring-brand-400">
+                    Wajib dijawab
+                </label>
+            </div>
+            <div class="md:col-span-2">
+                <button class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold">Tambah Pertanyaan</button>
             </div>
         </form>
 
         @foreach($test->questions as $question)
-            <div class="q">
-                <div><strong>Q{{ $question->sort_order }}.</strong> {{ $question->question_text }}</div>
-                <div class="muted" style="margin-top:4px;">Tipe: {{ $question->question_type }} | Required: {{ $question->is_required ? 'Ya' : 'Tidak' }}</div>
+            <article class="rounded-xl border border-slate-200 p-4 bg-slate-50 space-y-3">
+                <div class="font-semibold text-slate-900">Q{{ $question->sort_order }}. {{ $question->question_text }}</div>
+                <div class="text-sm text-slate-500">Tipe: {{ $question->question_type }} | Required: {{ $question->is_required ? 'Ya' : 'Tidak' }}</div>
 
-                <div style="margin-top:10px;">
-                    <strong>Opsi yang sudah ada:</strong>
-                    <ul class="list">
+                <div>
+                    <div class="text-sm font-semibold text-slate-700">Opsi yang sudah ada</div>
+                    <ul class="mt-2 list-disc pl-5 text-sm text-slate-700 space-y-1">
                         @forelse($question->options as $option)
-                            <li>{{ $option->option_text }} <span class="muted">({{ json_encode($option->scores_json) }})</span></li>
+                            <li>{{ $option->option_text }} <span class="text-slate-500">({{ json_encode($option->scores_json) }})</span></li>
                         @empty
-                            <li class="muted">Belum ada opsi.</li>
+                            <li class="text-slate-500">Belum ada opsi.</li>
                         @endforelse
                     </ul>
                 </div>
 
-                <form method="POST" action="/admin/custom-tests/{{ $test->id }}/questions/{{ $question->id }}/options" style="margin-top:10px;">
+                <form method="POST" action="/admin/custom-tests/{{ $test->id }}/questions/{{ $question->id }}/options" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     @csrf
-                    <div class="grid">
-                        <div class="full"><label>Teks Opsi Jawaban</label><input name="option_text" required></div>
-                        <div><label>Urutan Opsi</label><input type="number" min="1" max="9999" name="sort_order"></div>
-                        <div class="full">
-                            <label>Logic Skor per Dimensi</label>
-                            <div class="grid-4">
-                                @foreach($test->dimensions as $dimension)
-                                    <div>
-                                        <label>{{ $dimension->code }}</label>
-                                        <input type="number" name="score_{{ strtolower($dimension->code) }}" value="0">
-                                    </div>
-                                @endforeach
-                            </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Teks Opsi Jawaban</label>
+                        <input name="option_text" required class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Urutan Opsi</label>
+                        <input type="number" min="1" max="9999" name="sort_order" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Logic Skor per Dimensi</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                            @foreach($test->dimensions as $dimension)
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1">{{ $dimension->code }}</label>
+                                    <input type="number" name="score_{{ strtolower($dimension->code) }}" value="0" class="w-full rounded-lg border-slate-300 text-sm focus:border-brand-400 focus:ring-brand-400">
+                                </div>
+                            @endforeach
                         </div>
-                        <div class="full"><button class="btn" type="submit">Tambah Opsi + Logic Skor</button></div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <button class="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">Tambah Opsi + Logic Skor</button>
                     </div>
                 </form>
-            </div>
+            </article>
         @endforeach
-    </div>
+    </section>
 
-    <div class="card">
-        <h3 class="section-title">3) Rule Rekomendasi Posisi untuk Test Ini</h3>
-        <form method="POST" action="/admin/custom-tests/{{ $test->id }}/position-rules">
+    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 md:p-7 space-y-4">
+        <h2 class="text-xl font-bold text-slate-900">3) Rule Rekomendasi Posisi untuk Test Ini</h2>
+
+        <form method="POST" action="/admin/custom-tests/{{ $test->id }}/position-rules" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @csrf
-            <div class="grid">
-                <div>
-                    <label>Pilih Posisi</label>
-                    <select name="position_id" required>
-                        <option value="">- pilih posisi -</option>
-                        @foreach($positions as $position)
-                            <option value="{{ $position->id }}">{{ $position->title }}</option>
-                        @endforeach
-                    </select>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Pilih Posisi</label>
+                <select name="position_id" required class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+                    <option value="">- pilih posisi -</option>
+                    @foreach($positions as $position)
+                        <option value="{{ $position->id }}">{{ $position->title }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Target Skor per Dimensi</label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                    @foreach($test->dimensions as $dimension)
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">{{ $dimension->code }}</label>
+                            <input type="number" name="target_{{ strtolower($dimension->code) }}" value="0" class="w-full rounded-lg border-slate-300 text-sm focus:border-brand-400 focus:ring-brand-400">
+                        </div>
+                    @endforeach
                 </div>
-                <div class="full">
-                    <label>Target Skor per Dimensi</label>
-                    <div class="grid-4">
-                        @foreach($test->dimensions as $dimension)
-                            <div>
-                                <label>{{ $dimension->code }}</label>
-                                <input type="number" name="target_{{ strtolower($dimension->code) }}" value="0">
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-                <div class="full"><label>Catatan Rule</label><textarea name="notes"></textarea></div>
-                <div class="full"><button class="btn" type="submit">Simpan Rule Posisi</button></div>
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Catatan Rule</label>
+                <textarea name="notes" rows="2" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400"></textarea>
+            </div>
+            <div class="md:col-span-2">
+                <button class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold">Simpan Rule Posisi</button>
             </div>
         </form>
 
-        <div style="margin-top:14px;">
-            <table>
-                <thead><tr><th>Posisi</th><th>Target Skor</th><th>Catatan</th><th>Status</th></tr></thead>
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="text-left text-slate-500 border-b border-slate-200">
+                        <th class="py-3 pr-4">Posisi</th>
+                        <th class="py-3 pr-4">Target Skor</th>
+                        <th class="py-3 pr-4">Catatan</th>
+                        <th class="py-3">Status</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @forelse($test->positionProfiles as $profile)
                         @php
@@ -174,19 +190,18 @@
                             $fallbackClient = $profile->position->client->name ?? '-';
                             $displayClient = $clientNames !== '' ? $clientNames : $fallbackClient;
                         @endphp
-                        <tr>
-                            <td>{{ $profile->position->title }} <span class="muted">({{ $displayClient }})</span></td>
-                            <td>{{ json_encode($profile->target_scores_json) }}</td>
-                            <td>{{ $profile->notes ?: '-' }}</td>
-                            <td>{{ $profile->is_active ? 'Aktif' : 'Nonaktif' }}</td>
+                        <tr class="border-b border-slate-100 align-top">
+                            <td class="py-3 pr-4">{{ $profile->position->title }} <span class="text-slate-500">({{ $displayClient }})</span></td>
+                            <td class="py-3 pr-4">{{ json_encode($profile->target_scores_json) }}</td>
+                            <td class="py-3 pr-4">{{ $profile->notes ?: '-' }}</td>
+                            <td class="py-3">{{ $profile->is_active ? 'Aktif' : 'Nonaktif' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="4">Belum ada rule posisi untuk test ini.</td></tr>
+                        <tr><td colspan="4" class="py-5 text-slate-500">Belum ada rule posisi untuk test ini.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </section>
 </div>
-</body>
-</html>
+@endsection

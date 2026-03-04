@@ -32,6 +32,11 @@ class Client extends Model
         return $this->hasMany(MbtiTest::class);
     }
 
+    public function oceanTests()
+    {
+        return $this->hasMany(OceanTest::class);
+    }
+
     public function sessions()
     {
         return $this->hasMany(TestSession::class);

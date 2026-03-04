@@ -6,6 +6,8 @@ use App\Http\Controllers\DiscResultController;
 use App\Http\Controllers\DiscHandbookController;
 use App\Http\Controllers\MbtiTestController;
 use App\Http\Controllers\MbtiResultController;
+use App\Http\Controllers\OceanTestController;
+use App\Http\Controllers\OceanResultController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\TestSessionController;
 use App\Http\Controllers\Admin\PositionController;
@@ -28,6 +30,12 @@ Route::post('/mbti/start', [MbtiTestController::class, 'storeMeta']);
 Route::get('/mbti/test/{test}/question/{number}', [MbtiTestController::class, 'question']);
 Route::post('/mbti/test/{test}/answer', [MbtiTestController::class, 'answer']);
 Route::get('/mbti/test/{test}/result', [MbtiResultController::class, 'show']);
+
+Route::get('/ocean/start/{code}', [OceanTestController::class, 'start']);
+Route::post('/ocean/start', [OceanTestController::class, 'storeMeta']);
+Route::get('/ocean/test/{test}/question/{number}', [OceanTestController::class, 'question']);
+Route::post('/ocean/test/{test}/answer', [OceanTestController::class, 'answer']);
+Route::get('/ocean/test/{test}/result', [OceanResultController::class, 'show']);
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
