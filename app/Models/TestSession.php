@@ -39,4 +39,9 @@ class TestSession extends Model
     {
         return $this->hasMany(OceanTest::class, 'test_session_id');
     }
+
+    public function customTestSubmissions()
+    {
+        return $this->hasMany(CustomTestSubmission::class, 'test_session_id');
+    }
 }

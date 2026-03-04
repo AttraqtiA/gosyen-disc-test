@@ -14,22 +14,40 @@ use Illuminate\Support\Str;
 
 class PositionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $user = $request->user();
+
         $relations = ['client', 'profile', 'mbtiProfiles', 'oceanProfiles'];
         $hasClientPosition = Schema::hasTable('client_position');
         if ($hasClientPosition) {
             $relations[] = 'clients';
         }
 
-        $positions = Position::with($relations)->latest()->paginate(20);
-        $clients = Client::orderBy('name')->get();
+        $positions = Position::with($relations)
+            ->when($user->isClientAdmin(), function ($query) use ($user) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('client_id', $user->client_id);
+
+                    if (Schema::hasTable('client_position')) {
+                        $q->orWhereHas('clients', fn ($cq) => $cq->where('clients.id', $user->client_id));
+                    }
+                });
+            })
+            ->latest()
+            ->paginate(20);
+
+        $clients = $user->isClientAdmin()
+            ? Client::whereKey($user->client_id)->get()
+            : Client::orderBy('name')->get();
 
         return view('admin.positions.index', compact('positions', 'clients', 'hasClientPosition'));
     }
 
     public function store(Request $request)
     {
+        $user = $request->user();
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
@@ -44,7 +62,9 @@ class PositionController extends Controller
 
         $clientId = $validated['client_id'] ?? null;
 
-        if (!$clientId && !empty($validated['client_name'])) {
+        if ($user->isClientAdmin()) {
+            $clientId = $user->client_id;
+        } elseif (!$clientId && !empty($validated['client_name'])) {
             $client = Client::firstOrCreate(
                 ['name' => $validated['client_name']],
                 ['code' => Str::slug($validated['client_name']) . '-' . Str::lower(Str::random(5))]
@@ -52,7 +72,7 @@ class PositionController extends Controller
             $clientId = $client->id;
         }
 
-        $isGlobal = (bool) ($validated['is_global'] ?? false);
+        $isGlobal = $user->isClientAdmin() ? false : (bool) ($validated['is_global'] ?? false);
 
         if (!$clientId && !$isGlobal) {
             return back()->withErrors([
@@ -80,8 +100,10 @@ class PositionController extends Controller
         return back()->with('success', 'Posisi dan kombinasi profil tes berhasil ditambahkan.');
     }
 
-    public function toggle(Position $position)
+    public function toggle(Request $request, Position $position)
     {
+        $this->authorizePosition($request, $position);
+
         $position->update(['is_active' => !$position->is_active]);
 
         if ($position->profile) {
@@ -95,6 +117,8 @@ class PositionController extends Controller
 
     public function updateProfile(Request $request, Position $position)
     {
+        $this->authorizePosition($request, $position);
+
         $validated = $request->validate([
             'test_type' => ['required', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -112,6 +136,8 @@ class PositionController extends Controller
 
     public function attachClient(Request $request, Position $position)
     {
+        $this->authorizePosition($request, $position);
+
         if (!Schema::hasTable('client_position')) {
             return back()->withErrors([
                 'client_id' => 'Tabel client_position belum ada. Jalankan migrasi terbaru terlebih dahulu.',
@@ -122,22 +148,58 @@ class PositionController extends Controller
             'client_id' => ['required', 'exists:clients,id'],
         ]);
 
+        $user = $request->user();
+        if ($user->isClientAdmin() && (int) $validated['client_id'] !== (int) $user->client_id) {
+            abort(403, 'Client admin hanya bisa menautkan client miliknya.');
+        }
+
         $position->clients()->syncWithoutDetaching([$validated['client_id']]);
 
         return back()->with('success', 'Client berhasil ditambahkan ke posisi.');
     }
 
-    public function detachClient(Position $position, Client $client)
+    public function detachClient(Request $request, Position $position, Client $client)
     {
+        $this->authorizePosition($request, $position);
+
         if (!Schema::hasTable('client_position')) {
             return back()->withErrors([
                 'client_id' => 'Tabel client_position belum ada. Jalankan migrasi terbaru terlebih dahulu.',
             ]);
         }
 
+        $user = $request->user();
+        if ($user->isClientAdmin() && (int) $client->id !== (int) $user->client_id) {
+            abort(403, 'Client admin hanya bisa melepas client miliknya.');
+        }
+
         $position->clients()->detach($client->id);
 
         return back()->with('success', 'Client berhasil dilepas dari posisi.');
+    }
+
+    private function authorizePosition(Request $request, Position $position): void
+    {
+        $user = $request->user();
+
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+
+        if ($user->isClientAdmin()) {
+            if ((int) $position->client_id === (int) $user->client_id) {
+                return;
+            }
+
+            if (Schema::hasTable('client_position')) {
+                $attached = $position->clients()->where('clients.id', $user->client_id)->exists();
+                if ($attached) {
+                    return;
+                }
+            }
+        }
+
+        abort(403, 'Anda tidak memiliki akses ke posisi ini.');
     }
 
     private function validateProfileInput(Request $request, string $testType): array

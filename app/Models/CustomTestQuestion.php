@@ -27,4 +27,9 @@ class CustomTestQuestion extends Model
     {
         return $this->hasMany(CustomTestOption::class, 'custom_test_question_id')->orderBy('sort_order');
     }
+
+    public function submissionAnswers()
+    {
+        return $this->hasMany(CustomTestSubmissionAnswer::class, 'custom_test_question_id');
+    }
 }

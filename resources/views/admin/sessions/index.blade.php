@@ -11,6 +11,8 @@
                 <a href="/admin/sessions" class="px-4 py-2 rounded-xl text-sm font-semibold bg-brand-100 text-brand-700 border border-brand-200">Kode Sesi Tes</a>
                 <a href="/admin/positions" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Posisi & Kombinasi Tes</a>
                 <a href="/admin/custom-tests" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Test Builder</a>
+                <a href="/admin/analytics" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Analytics & Export</a>
+                <a href="/admin/reviews" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Review Essay</a>
                 <a href="/handbook?type=DISC" target="_blank" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Panduan Tes</a>
             </div>
         </div>
@@ -23,11 +25,12 @@
                 aria-label="Aktifkan dark mode"
                 title="Aktifkan dark mode"
             >
-                <svg data-theme-icon="moon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8 8 0 1010.586 10.586z" />
+                <svg data-theme-icon="moon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3c-.12.58-.18 1.18-.18 1.79A7.2 7.2 0 0 0 18.2 12c.61 0 1.21-.06 1.8-.18z" />
                 </svg>
-                <svg data-theme-icon="sun" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 10-1.414 1.414zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 6a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.536a1 1 0 10-1.414 1.414l.707-.707a1 1 0 001.414-1.414l-.707.707zM4 11a1 1 0 100-2H3a1 1 0 100 2h1zm1.757-6.364a1 1 0 00-1.414-1.414l-.707.707A1 1 0 105.05 5.343l.707-.707zM14.95 5.343a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414l.707.707z" clip-rule="evenodd" />
+                <svg data-theme-icon="sun" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2.2M12 19.8V22M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2 12h2.2M19.8 12H22M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6" />
                 </svg>
             </button>
             <form method="POST" action="{{ route('logout') }}">
@@ -118,6 +121,7 @@
                             </td>
                             <td class="py-4">
                                 <div class="space-y-2">
+                                    <a href="/admin/exports/sessions/{{ $session->id }}.csv" class="inline-flex px-3 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50">Export Sesi</a>
                                     <form method="POST" action="/admin/sessions/{{ $session->id }}/toggle">
                                         @csrf @method('PATCH')
                                         <button class="px-3 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">{{ $session->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
@@ -171,6 +175,7 @@
                     <div class="text-sm text-slate-700">{{ $session->name }}</div>
                     <div class="text-sm text-slate-500">{{ $session->test_type }} • {{ $session->client->name ?? '-' }}</div>
                     <div class="flex flex-wrap gap-2 pt-2">
+                        <a href="/admin/exports/sessions/{{ $session->id }}.csv" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold">Export Sesi</a>
                         <form method="POST" action="/admin/sessions/{{ $session->id }}/toggle">@csrf @method('PATCH')<button class="px-3 py-2 rounded-lg bg-brand-500 text-white text-sm font-semibold">{{ $session->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button></form>
                         <form method="POST" action="/admin/sessions/{{ $session->id }}" onsubmit="return confirm('Hapus sesi ini?');">@csrf @method('DELETE')<button class="px-3 py-2 rounded-lg border border-rose-300 text-rose-700 text-sm font-semibold">Hapus</button></form>
                     </div>

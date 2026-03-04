@@ -11,6 +11,7 @@
                 <a href="/admin/sessions" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Kode Sesi Tes</a>
                 <a href="/admin/positions" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Posisi & Kombinasi Tes</a>
                 <a href="/admin/custom-tests" class="px-4 py-2 rounded-xl text-sm font-semibold bg-brand-100 text-brand-700 border border-brand-200">Test Builder</a>
+                <a href="/admin/analytics" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Analytics & Export</a>
             </div>
         </div>
 
@@ -80,6 +81,13 @@
                 <textarea name="question_text" rows="3" required class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400"></textarea>
             </div>
             <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Tipe Pertanyaan</label>
+                <select name="question_type" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+                    <option value="single_choice">Pilihan Ganda</option>
+                    <option value="essay">Essay</option>
+                </select>
+            </div>
+            <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-1">Urutan Soal</label>
                 <input type="number" min="1" max="9999" name="sort_order" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
             </div>
@@ -99,42 +107,48 @@
                 <div class="font-semibold text-slate-900">Q{{ $question->sort_order }}. {{ $question->question_text }}</div>
                 <div class="text-sm text-slate-500">Tipe: {{ $question->question_type }} | Required: {{ $question->is_required ? 'Ya' : 'Tidak' }}</div>
 
-                <div>
-                    <div class="text-sm font-semibold text-slate-700">Opsi yang sudah ada</div>
-                    <ul class="mt-2 list-disc pl-5 text-sm text-slate-700 space-y-1">
-                        @forelse($question->options as $option)
-                            <li>{{ $option->option_text }} <span class="text-slate-500">({{ json_encode($option->scores_json) }})</span></li>
-                        @empty
-                            <li class="text-slate-500">Belum ada opsi.</li>
-                        @endforelse
-                    </ul>
-                </div>
-
-                <form method="POST" action="/admin/custom-tests/{{ $test->id }}/questions/{{ $question->id }}/options" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    @csrf
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-semibold text-slate-700 mb-1">Teks Opsi Jawaban</label>
-                        <input name="option_text" required class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+                @if($question->question_type === 'essay')
+                    <div class="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-700">
+                        Soal tipe essay: responden akan mengisi jawaban teks bebas dan ditinjau reviewer.
                     </div>
+                @else
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1">Urutan Opsi</label>
-                        <input type="number" min="1" max="9999" name="sort_order" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+                        <div class="text-sm font-semibold text-slate-700">Opsi yang sudah ada</div>
+                        <ul class="mt-2 list-disc pl-5 text-sm text-slate-700 space-y-1">
+                            @forelse($question->options as $option)
+                                <li>{{ $option->option_text }} <span class="text-slate-500">({{ json_encode($option->scores_json) }})</span></li>
+                            @empty
+                                <li class="text-slate-500">Belum ada opsi.</li>
+                            @endforelse
+                        </ul>
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">Logic Skor per Dimensi</label>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                            @foreach($test->dimensions as $dimension)
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-500 mb-1">{{ $dimension->code }}</label>
-                                    <input type="number" name="score_{{ strtolower($dimension->code) }}" value="0" class="w-full rounded-lg border-slate-300 text-sm focus:border-brand-400 focus:ring-brand-400">
-                                </div>
-                            @endforeach
+
+                    <form method="POST" action="/admin/custom-tests/{{ $test->id }}/questions/{{ $question->id }}/options" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        @csrf
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Teks Opsi Jawaban</label>
+                            <input name="option_text" required class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
                         </div>
-                    </div>
-                    <div class="md:col-span-2">
-                        <button class="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">Tambah Opsi + Logic Skor</button>
-                    </div>
-                </form>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Urutan Opsi</label>
+                            <input type="number" min="1" max="9999" name="sort_order" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Logic Skor per Dimensi</label>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                                @foreach($test->dimensions as $dimension)
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-500 mb-1">{{ $dimension->code }}</label>
+                                        <input type="number" name="score_{{ strtolower($dimension->code) }}" value="0" class="w-full rounded-lg border-slate-300 text-sm focus:border-brand-400 focus:ring-brand-400">
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <button class="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">Tambah Opsi + Logic Skor</button>
+                        </div>
+                    </form>
+                @endif
             </article>
         @endforeach
     </section>

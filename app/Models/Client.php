@@ -41,4 +41,9 @@ class Client extends Model
     {
         return $this->hasMany(TestSession::class);
     }
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }

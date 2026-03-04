@@ -12,6 +12,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\TestSessionController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\CustomTestController;
+use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Admin\ReviewController;
 
 Route::get('/', [DiscTestController::class, 'codeEntry']);
 Route::post('/access', [DiscTestController::class, 'accessByCode']);
@@ -45,28 +47,47 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    Route::get('/admin', fn () => redirect('/admin/sessions'));
-    Route::get('/admin/sessions', [TestSessionController::class, 'index']);
-    Route::post('/admin/sessions', [TestSessionController::class, 'store']);
-    Route::patch('/admin/sessions/{session}', [TestSessionController::class, 'update']);
-    Route::delete('/admin/sessions/{session}', [TestSessionController::class, 'destroy']);
-    Route::patch('/admin/sessions/{session}/toggle', [TestSessionController::class, 'toggle']);
+    Route::get('/admin', function () {
+        $user = request()->user();
 
-    Route::get('/admin/positions', [PositionController::class, 'index']);
-    Route::post('/admin/positions', [PositionController::class, 'store']);
-    Route::patch('/admin/positions/{position}/toggle', [PositionController::class, 'toggle']);
-    Route::patch('/admin/positions/{position}/profile', [PositionController::class, 'updateProfile']);
-    Route::post('/admin/positions/{position}/clients', [PositionController::class, 'attachClient']);
-    Route::delete('/admin/positions/{position}/clients/{client}', [PositionController::class, 'detachClient']);
+        if ($user?->role === 'reviewer') {
+            return redirect('/admin/reviews');
+        }
 
-    Route::get('/admin/custom-tests', [CustomTestController::class, 'index']);
-    Route::post('/admin/custom-tests', [CustomTestController::class, 'store']);
-    Route::patch('/admin/custom-tests/{test}', [CustomTestController::class, 'update']);
-    Route::delete('/admin/custom-tests/{test}', [CustomTestController::class, 'destroy']);
-    Route::patch('/admin/custom-tests/{test}/toggle', [CustomTestController::class, 'toggle']);
-    Route::get('/admin/custom-tests/{test}', [CustomTestController::class, 'show']);
-    Route::post('/admin/custom-tests/{test}/dimensions', [CustomTestController::class, 'storeDimension']);
-    Route::post('/admin/custom-tests/{test}/questions', [CustomTestController::class, 'storeQuestion']);
-    Route::post('/admin/custom-tests/{test}/questions/{question}/options', [CustomTestController::class, 'storeOption']);
-    Route::post('/admin/custom-tests/{test}/position-rules', [CustomTestController::class, 'upsertPositionRule']);
+        return redirect('/admin/sessions');
+    })->middleware('role:superadmin,client_admin,reviewer');
+
+    Route::middleware('role:superadmin,client_admin')->group(function () {
+        Route::get('/admin/sessions', [TestSessionController::class, 'index']);
+        Route::post('/admin/sessions', [TestSessionController::class, 'store']);
+        Route::patch('/admin/sessions/{session}', [TestSessionController::class, 'update']);
+        Route::delete('/admin/sessions/{session}', [TestSessionController::class, 'destroy']);
+        Route::patch('/admin/sessions/{session}/toggle', [TestSessionController::class, 'toggle']);
+
+        Route::get('/admin/positions', [PositionController::class, 'index']);
+        Route::post('/admin/positions', [PositionController::class, 'store']);
+        Route::patch('/admin/positions/{position}/toggle', [PositionController::class, 'toggle']);
+        Route::patch('/admin/positions/{position}/profile', [PositionController::class, 'updateProfile']);
+        Route::post('/admin/positions/{position}/clients', [PositionController::class, 'attachClient']);
+        Route::delete('/admin/positions/{position}/clients/{client}', [PositionController::class, 'detachClient']);
+
+        Route::get('/admin/custom-tests', [CustomTestController::class, 'index']);
+        Route::get('/admin/analytics', [AnalyticsController::class, 'index']);
+        Route::get('/admin/exports/tests.csv', [AnalyticsController::class, 'exportAll']);
+        Route::get('/admin/exports/sessions/{session}.csv', [AnalyticsController::class, 'exportSession']);
+        Route::post('/admin/custom-tests', [CustomTestController::class, 'store']);
+        Route::patch('/admin/custom-tests/{test}', [CustomTestController::class, 'update']);
+        Route::delete('/admin/custom-tests/{test}', [CustomTestController::class, 'destroy']);
+        Route::patch('/admin/custom-tests/{test}/toggle', [CustomTestController::class, 'toggle']);
+        Route::get('/admin/custom-tests/{test}', [CustomTestController::class, 'show']);
+        Route::post('/admin/custom-tests/{test}/dimensions', [CustomTestController::class, 'storeDimension']);
+        Route::post('/admin/custom-tests/{test}/questions', [CustomTestController::class, 'storeQuestion']);
+        Route::post('/admin/custom-tests/{test}/questions/{question}/options', [CustomTestController::class, 'storeOption']);
+        Route::post('/admin/custom-tests/{test}/position-rules', [CustomTestController::class, 'upsertPositionRule']);
+    });
+
+    Route::middleware('role:superadmin,reviewer')->group(function () {
+        Route::get('/admin/reviews', [ReviewController::class, 'index']);
+        Route::patch('/admin/reviews/{answer}', [ReviewController::class, 'update']);
+    });
 });

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class CustomTest extends Model
 {
     protected $fillable = [
+        'client_id',
         'name',
         'code',
         'description',
@@ -18,6 +19,11 @@ class CustomTest extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
 
     public function dimensions()
     {
@@ -32,5 +38,10 @@ class CustomTest extends Model
     public function positionProfiles()
     {
         return $this->hasMany(PositionCustomTestProfile::class);
+    }
+
+    public function submissions()
+    {
+        return $this->hasMany(CustomTestSubmission::class);
     }
 }

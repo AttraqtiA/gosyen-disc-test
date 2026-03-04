@@ -42,6 +42,22 @@
     </script>
 
     <style>
+        :where(
+            input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+            select,
+            textarea
+        ) {
+            border-width: 1px !important;
+            border-style: solid !important;
+            border-color: rgb(203 213 225) !important;
+            min-height: 2.875rem !important;
+            padding-top: 0.625rem !important;
+            padding-bottom: 0.625rem !important;
+            padding-left: 0.875rem !important;
+            padding-right: 0.875rem !important;
+            line-height: 1.5 !important;
+        }
+
         .dark .bg-white { background-color: rgb(15 23 42) !important; }
         .dark .bg-slate-50 { background-color: rgb(2 6 23) !important; }
         .dark .bg-slate-100 { background-color: rgb(15 23 42) !important; }

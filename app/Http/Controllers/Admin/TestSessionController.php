@@ -11,16 +11,28 @@ use Illuminate\Support\Str;
 
 class TestSessionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $sessions = TestSession::with('client')->latest()->paginate(20);
-        $clients = Client::orderBy('name')->get();
+        $user = $request->user();
+
+        $sessions = TestSession::with('client')
+            ->when($user->isClientAdmin(), function ($query) use ($user) {
+                $query->where('client_id', $user->client_id);
+            })
+            ->latest()
+            ->paginate(20);
+
+        $clients = $user->isClientAdmin()
+            ? Client::whereKey($user->client_id)->get()
+            : Client::orderBy('name')->get();
 
         return view('admin.sessions.index', compact('sessions', 'clients'));
     }
 
     public function store(Request $request)
     {
+        $user = $request->user();
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9_-]+$/', 'unique:test_sessions,code'],
@@ -32,7 +44,9 @@ class TestSessionController extends Controller
 
         $clientId = $validated['client_id'] ?? null;
 
-        if (!$clientId && !empty($validated['client_name'])) {
+        if ($user->isClientAdmin()) {
+            $clientId = $user->client_id;
+        } elseif (!$clientId && !empty($validated['client_name'])) {
             $client = Client::firstOrCreate(
                 ['name' => $validated['client_name']],
                 ['code' => Str::slug($validated['client_name']) . '-' . Str::lower(Str::random(5))]
@@ -52,8 +66,10 @@ class TestSessionController extends Controller
         return back()->with('success', 'Kode sesi berhasil dibuat.');
     }
 
-    public function toggle(TestSession $session)
+    public function toggle(Request $request, TestSession $session)
     {
+        $this->authorizeSession($request, $session);
+
         $session->update(['is_active' => !$session->is_active]);
 
         return back()->with('success', 'Status sesi diperbarui.');
@@ -61,6 +77,10 @@ class TestSessionController extends Controller
 
     public function update(Request $request, TestSession $session)
     {
+        $this->authorizeSession($request, $session);
+
+        $user = $request->user();
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'code' => [
@@ -78,7 +98,9 @@ class TestSessionController extends Controller
 
         $clientId = $validated['client_id'] ?? null;
 
-        if (!$clientId && !empty($validated['client_name'])) {
+        if ($user->isClientAdmin()) {
+            $clientId = $user->client_id;
+        } elseif (!$clientId && !empty($validated['client_name'])) {
             $client = Client::firstOrCreate(
                 ['name' => $validated['client_name']],
                 ['code' => Str::slug($validated['client_name']) . '-' . Str::lower(Str::random(5))]
@@ -97,10 +119,27 @@ class TestSessionController extends Controller
         return back()->with('success', 'Sesi berhasil diperbarui.');
     }
 
-    public function destroy(TestSession $session)
+    public function destroy(Request $request, TestSession $session)
     {
+        $this->authorizeSession($request, $session);
+
         $session->delete();
 
         return back()->with('success', 'Sesi berhasil dihapus.');
+    }
+
+    private function authorizeSession(Request $request, TestSession $session): void
+    {
+        $user = $request->user();
+
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+
+        if ($user->isClientAdmin() && $session->client_id === $user->client_id) {
+            return;
+        }
+
+        abort(403, 'Anda tidak memiliki akses ke sesi ini.');
     }
 }
