@@ -54,7 +54,7 @@
 <body>
     <div class="box">
         <h1>Tes Kepribadian</h1>
-        <p>Masukkan kode sesi dari admin untuk memulai tes.</p>
+        <p>Masukkan kode sesi dari admin untuk memulai tes (DISC atau MBTI).</p>
         <form method="POST" action="/access">
             @csrf
             <label for="code">Kode Sesi</label>

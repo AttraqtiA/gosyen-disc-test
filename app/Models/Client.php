@@ -27,6 +27,11 @@ class Client extends Model
         return $this->hasMany(DiscTest::class);
     }
 
+    public function mbtiTests()
+    {
+        return $this->hasMany(MbtiTest::class);
+    }
+
     public function sessions()
     {
         return $this->hasMany(TestSession::class);

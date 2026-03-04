@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Position;
 use App\Models\PositionDiscProfile;
+use App\Models\PositionMbtiProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -14,7 +15,7 @@ class PositionController extends Controller
 {
     public function index()
     {
-        $relations = ['client', 'profile'];
+        $relations = ['client', 'profile', 'mbtiProfiles'];
         $hasClientPosition = Schema::hasTable('client_position');
         if ($hasClientPosition) {
             $relations[] = 'clients';
@@ -35,12 +36,10 @@ class PositionController extends Controller
             'client_name' => ['nullable', 'string', 'max:255'],
             'test_type' => ['required', 'string', 'max:50'],
             'is_global' => ['nullable', 'boolean'],
-            'd_target' => ['required', 'integer', 'min:0', 'max:100'],
-            'i_target' => ['required', 'integer', 'min:0', 'max:100'],
-            's_target' => ['required', 'integer', 'min:0', 'max:100'],
-            'c_target' => ['required', 'integer', 'min:0', 'max:100'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
+        $testType = strtoupper($validated['test_type']);
+        $profileData = $this->validateProfileInput($request, $testType);
 
         $clientId = $validated['client_id'] ?? null;
 
@@ -68,15 +67,9 @@ class PositionController extends Controller
             'is_global' => $isGlobal,
         ]);
 
-        PositionDiscProfile::create([
-            'position_id' => $position->id,
-            'test_type' => strtoupper($validated['test_type']),
-            'd_target' => $validated['d_target'],
-            'i_target' => $validated['i_target'],
-            's_target' => $validated['s_target'],
-            'c_target' => $validated['c_target'],
+        $this->createOrUpdateProfile($position, $testType, [
+            ...$profileData,
             'notes' => $validated['notes'] ?? null,
-            'is_active' => true,
         ]);
 
         if ($clientId && Schema::hasTable('client_position')) {
@@ -93,6 +86,7 @@ class PositionController extends Controller
         if ($position->profile) {
             $position->profile->update(['is_active' => $position->is_active]);
         }
+        $position->mbtiProfiles()->update(['is_active' => $position->is_active]);
 
         return back()->with('success', 'Status posisi diperbarui.');
     }
@@ -100,22 +94,16 @@ class PositionController extends Controller
     public function updateProfile(Request $request, Position $position)
     {
         $validated = $request->validate([
-            'd_target' => ['required', 'integer', 'min:0', 'max:100'],
-            'i_target' => ['required', 'integer', 'min:0', 'max:100'],
-            's_target' => ['required', 'integer', 'min:0', 'max:100'],
-            'c_target' => ['required', 'integer', 'min:0', 'max:100'],
-            'test_type' => ['nullable', 'string', 'max:50'],
+            'test_type' => ['required', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
+        $testType = strtoupper($validated['test_type']);
+        $profileData = $this->validateProfileInput($request, $testType);
 
-        PositionDiscProfile::updateOrCreate(
-            ['position_id' => $position->id],
-            [
-                ...$validated,
-                'test_type' => strtoupper($validated['test_type'] ?? optional($position->profile)->test_type ?? 'DISC'),
-                'is_active' => $position->is_active,
-            ]
-        );
+        $this->createOrUpdateProfile($position, $testType, [
+            ...$profileData,
+            'notes' => $validated['notes'] ?? null,
+        ]);
 
         return back()->with('success', 'Kombinasi profil posisi berhasil diperbarui.');
     }
@@ -148,5 +136,67 @@ class PositionController extends Controller
         $position->clients()->detach($client->id);
 
         return back()->with('success', 'Client berhasil dilepas dari posisi.');
+    }
+
+    private function validateProfileInput(Request $request, string $testType): array
+    {
+        if ($testType === 'DISC') {
+            return $request->validate([
+                'd_target' => ['required', 'integer', 'min:0', 'max:100'],
+                'i_target' => ['required', 'integer', 'min:0', 'max:100'],
+                's_target' => ['required', 'integer', 'min:0', 'max:100'],
+                'c_target' => ['required', 'integer', 'min:0', 'max:100'],
+            ]);
+        }
+
+        if ($testType === 'MBTI') {
+            return $request->validate([
+                'e_target' => ['required', 'integer', 'min:0', 'max:100'],
+                'i_target' => ['required', 'integer', 'min:0', 'max:100'],
+                's_target' => ['required', 'integer', 'min:0', 'max:100'],
+                'n_target' => ['required', 'integer', 'min:0', 'max:100'],
+                't_target' => ['required', 'integer', 'min:0', 'max:100'],
+                'f_target' => ['required', 'integer', 'min:0', 'max:100'],
+                'j_target' => ['required', 'integer', 'min:0', 'max:100'],
+                'p_target' => ['required', 'integer', 'min:0', 'max:100'],
+            ]);
+        }
+
+        abort(422, 'Tipe tes tidak didukung untuk profil posisi.');
+    }
+
+    private function createOrUpdateProfile(Position $position, string $testType, array $data): void
+    {
+        if ($testType === 'DISC') {
+            PositionDiscProfile::updateOrCreate(
+                ['position_id' => $position->id],
+                [
+                    'test_type' => 'DISC',
+                    'd_target' => $data['d_target'],
+                    'i_target' => $data['i_target'],
+                    's_target' => $data['s_target'],
+                    'c_target' => $data['c_target'],
+                    'notes' => $data['notes'] ?? null,
+                    'is_active' => $position->is_active,
+                ]
+            );
+            return;
+        }
+
+        PositionMbtiProfile::updateOrCreate(
+            ['position_id' => $position->id, 'test_type' => $testType],
+            [
+                'e_target' => $data['e_target'],
+                'i_target' => $data['i_target'],
+                's_target' => $data['s_target'],
+                'n_target' => $data['n_target'],
+                't_target' => $data['t_target'],
+                'f_target' => $data['f_target'],
+                'j_target' => $data['j_target'],
+                'p_target' => $data['p_target'],
+                'notes' => $data['notes'] ?? null,
+                'is_active' => $position->is_active,
+            ]
+        );
     }
 }

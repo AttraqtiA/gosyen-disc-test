@@ -29,4 +29,9 @@ class TestSession extends Model
     {
         return $this->hasMany(DiscTest::class, 'test_session_id');
     }
+
+    public function mbtiTests()
+    {
+        return $this->hasMany(MbtiTest::class, 'test_session_id');
+    }
 }

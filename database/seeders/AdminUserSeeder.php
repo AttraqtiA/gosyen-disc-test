@@ -13,8 +13,10 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
+        User::where('email', 'admin@gosyen.local')->delete();
+
         User::updateOrCreate(
-            ['email' => 'admin@gosyen.local'],
+            ['email' => 'admingosyen@gmail.com'],
             [
                 'name' => 'Admin Gosyen',
                 'password' => Hash::make('admin12345'),

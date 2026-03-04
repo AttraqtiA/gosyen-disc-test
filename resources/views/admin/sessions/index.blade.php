@@ -24,6 +24,8 @@
         th,td{border:1px solid var(--line);padding:10px;font-size:13px;text-align:left}
         th{color:var(--muted)}
         .ok{color:var(--ok);font-weight:700}.off{color:var(--off);font-weight:700}
+        .stack{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+        .btn-ghost{border:1px solid var(--line);border-radius:8px;background:#071327;color:var(--muted);padding:8px 10px;font-weight:700;cursor:pointer}
         .msg{margin-bottom:10px;color:var(--ok)} .err{margin-bottom:10px;color:var(--off)}
         @media (max-width:900px){.grid{grid-template-columns:1fr}.title{font-size:28px}}
     </style>
@@ -35,8 +37,9 @@
             <h1 class="title">Admin Panel</h1>
             <div class="nav" style="margin-top:10px;">
                 <a class="tab active" href="/admin/sessions">Kode Sesi Tes</a>
-                <a class="tab" href="/admin/positions">Posisi & Kombinasi DISC</a>
-                <a class="tab" href="/handbook/disc?type=DISC" target="_blank">Panduan Tes</a>
+                <a class="tab" href="/admin/positions">Posisi & Kombinasi Tes</a>
+                <a class="tab" href="/admin/custom-tests">Test Builder</a>
+                <a class="tab" href="/handbook?type=DISC" target="_blank">Panduan Tes</a>
             </div>
         </div>
         <form method="POST" action="{{ route('logout') }}">@csrf<button class="btn" type="submit">Logout</button></form>
@@ -54,7 +57,7 @@
             <div class="grid">
                 <div><label>Nama Sesi</label><input name="name" value="{{ old('name') }}" required></div>
                 <div><label>Kode (custom)</label><input name="code" value="{{ old('code') }}" placeholder="DISC-MEI26" required></div>
-                <div><label>Tipe Tes</label><select name="test_type"><option value="DISC">DISC</option><option value="MBTI">MBTI (persiapan)</option><option value="OTHER">Other (persiapan)</option></select></div>
+                <div><label>Tipe Tes</label><select name="test_type"><option value="DISC">DISC</option><option value="MBTI">MBTI</option><option value="OTHER">Other</option></select></div>
                 <div><label>Client (pilih)</label><select name="client_id"><option value="">-</option>@foreach($clients as $client)<option value="{{ $client->id }}">{{ $client->name }}</option>@endforeach</select></div>
                 <div><label>Atau Nama Client Baru</label><input name="client_name" value="{{ old('client_name') }}"></div>
                 <div><label>Kedaluwarsa (opsional)</label><input name="expires_at" type="datetime-local" value="{{ old('expires_at') }}"></div>
@@ -78,11 +81,43 @@
                         <td>{{ $session->client->name ?? '-' }}</td>
                         <td class="{{ $session->is_active ? 'ok' : 'off' }}">{{ $session->is_active ? 'Aktif' : 'Nonaktif' }}</td>
                         <td>
-                            <form method="POST" action="/admin/sessions/{{ $session->id }}/toggle">
-                                @csrf
-                                @method('PATCH')
-                                <button class="btn" type="submit">{{ $session->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
-                            </form>
+                            <div class="stack">
+                                <form method="POST" action="/admin/sessions/{{ $session->id }}/toggle">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button class="btn" type="submit">{{ $session->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
+                                </form>
+                                <details>
+                                    <summary style="cursor:pointer;color:var(--muted);font-weight:700;">Edit</summary>
+                                    <form method="POST" action="/admin/sessions/{{ $session->id }}" style="margin-top:8px;">
+                                        @csrf
+                                        @method('PATCH')
+                                        <div class="stack">
+                                            <input name="name" value="{{ $session->name }}" required>
+                                            <input name="code" value="{{ $session->code }}" required>
+                                            <select name="test_type">
+                                                <option value="DISC" @selected($session->test_type === 'DISC')>DISC</option>
+                                                <option value="MBTI" @selected($session->test_type === 'MBTI')>MBTI</option>
+                                                <option value="OTHER" @selected($session->test_type === 'OTHER')>Other</option>
+                                            </select>
+                                            <select name="client_id">
+                                                <option value="">-</option>
+                                                @foreach($clients as $client)
+                                                    <option value="{{ $client->id }}" @selected($session->client_id === $client->id)>{{ $client->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <input name="client_name" placeholder="Atau nama client baru">
+                                            <input name="expires_at" type="datetime-local" value="{{ $session->expires_at?->format('Y-m-d\\TH:i') }}">
+                                            <button class="btn-ghost" type="submit">Simpan Edit</button>
+                                        </div>
+                                    </form>
+                                </details>
+                                <form method="POST" action="/admin/sessions/{{ $session->id }}" onsubmit="return confirm('Hapus sesi ini?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn-ghost" type="submit">Hapus</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 @empty

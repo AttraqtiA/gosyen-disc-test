@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Client;
 use App\Models\Position;
 use App\Models\PositionDiscProfile;
+use App\Models\PositionMbtiProfile;
 use App\Models\TestSession;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -54,12 +55,55 @@ class ClientPositionSeeder extends Seeder
                 );
             }
 
+            $mbtiPositions = [
+                [
+                    'title' => 'Business Development',
+                    'description' => 'Peran ekspansi pasar, relasi, dan inisiatif peluang.',
+                    'profile' => ['e_target' => 75, 'i_target' => 25, 's_target' => 40, 'n_target' => 60, 't_target' => 55, 'f_target' => 45, 'j_target' => 55, 'p_target' => 45],
+                ],
+                [
+                    'title' => 'Finance & Accounting Analyst',
+                    'description' => 'Peran analitik, ketelitian angka, dan kepatuhan prosedur.',
+                    'profile' => ['e_target' => 35, 'i_target' => 65, 's_target' => 70, 'n_target' => 30, 't_target' => 70, 'f_target' => 30, 'j_target' => 70, 'p_target' => 30],
+                ],
+                [
+                    'title' => 'HR Business Partner',
+                    'description' => 'Peran people strategy, komunikasi lintas fungsi, dan mediasi.',
+                    'profile' => ['e_target' => 60, 'i_target' => 40, 's_target' => 45, 'n_target' => 55, 't_target' => 40, 'f_target' => 60, 'j_target' => 55, 'p_target' => 45],
+                ],
+            ];
+
+            foreach ($mbtiPositions as $item) {
+                $position = Position::updateOrCreate(
+                    ['title' => $item['title']],
+                    ['client_id' => $client->id, 'description' => $item['description'], 'is_active' => true, 'is_global' => true]
+                );
+
+                $position->clients()->syncWithoutDetaching([$client->id]);
+
+                PositionMbtiProfile::updateOrCreate(
+                    ['position_id' => $position->id, 'test_type' => 'MBTI'],
+                    [...$item['profile'], 'notes' => null, 'is_active' => true]
+                );
+            }
+
             TestSession::updateOrCreate(
                 ['code' => 'DEMODISC'],
                 [
                     'name' => 'Demo DISC Session',
                     'client_id' => $client->id,
                     'test_type' => 'DISC',
+                    'is_active' => true,
+                    'expires_at' => null,
+                ]
+            );
+
+            TestSession::updateOrCreate(
+                ['code' => 'DEMOMBTI'],
+                [
+                    'name' => 'Demo MBTI Session',
+                    'client_id' => $client->id,
+                    'test_type' => 'MBTI',
                     'is_active' => true,
                     'expires_at' => null,
                 ]

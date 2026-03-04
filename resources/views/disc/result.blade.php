@@ -78,7 +78,7 @@
     <div class="container">
         <h1>Hasil Tes Kepribadian</h1>
         <p class="muted">Terima kasih, {{ $test->nama }}.</p>
-        <p><a href="/handbook/disc?type=DISC" style="text-decoration:none;color:#032137;background:linear-gradient(180deg,var(--accent),var(--accent-2));padding:8px 12px;border-radius:8px;font-weight:700;display:inline-block;">Lihat Panduan Tes</a></p>
+        <p><a href="/handbook?type=DISC" style="text-decoration:none;color:#032137;background:linear-gradient(180deg,var(--accent),var(--accent-2));padding:8px 12px;border-radius:8px;font-weight:700;display:inline-block;">Lihat Panduan Tes</a></p>
 
         @if (session('warning'))
             <div class="warning">{{ session('warning') }}</div>

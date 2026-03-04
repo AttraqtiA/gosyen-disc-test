@@ -29,8 +29,23 @@ class Position extends Model
         return $this->hasOne(PositionDiscProfile::class);
     }
 
+    public function mbtiProfiles()
+    {
+        return $this->hasMany(PositionMbtiProfile::class);
+    }
+
     public function recommendations()
     {
         return $this->hasMany(DiscRecommendation::class);
+    }
+
+    public function mbtiRecommendations()
+    {
+        return $this->hasMany(MbtiRecommendation::class);
+    }
+
+    public function customTestProfiles()
+    {
+        return $this->hasMany(PositionCustomTestProfile::class);
     }
 }
