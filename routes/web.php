@@ -75,6 +75,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/analytics', [AnalyticsController::class, 'index']);
         Route::get('/admin/exports/tests.csv', [AnalyticsController::class, 'exportAll']);
         Route::get('/admin/exports/sessions/{session}.csv', [AnalyticsController::class, 'exportSession']);
+        Route::get('/admin/exports/disc/questions.csv', [AnalyticsController::class, 'exportDiscQuestions']);
+        Route::get('/admin/exports/disc/manual.csv', [AnalyticsController::class, 'exportDiscManual']);
         Route::post('/admin/custom-tests', [CustomTestController::class, 'store']);
         Route::patch('/admin/custom-tests/{test}', [CustomTestController::class, 'update']);
         Route::delete('/admin/custom-tests/{test}', [CustomTestController::class, 'destroy']);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\DiscQuestion;
 use App\Models\DiscTest;
 use App\Models\MbtiTest;
 use App\Models\OceanTest;
@@ -75,6 +76,7 @@ class AnalyticsController extends Controller
 
         return response()->streamDownload(function () use ($type, $startDate, $endDate, $clientId) {
             $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
             fputcsv($out, $this->csvHeader());
 
             foreach ($this->buildExportRows($type, null, $startDate, $endDate, $clientId) as $row) {
@@ -100,10 +102,96 @@ class AnalyticsController extends Controller
 
         return response()->streamDownload(function () use ($session, $type, $startDate, $endDate, $user) {
             $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
             fputcsv($out, $this->csvHeader());
 
             foreach ($this->buildExportRows($type, $session->id, $startDate, $endDate, $user->isSuperAdmin() ? null : $user->client_id) as $row) {
                 fputcsv($out, $row);
+            }
+
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function exportDiscQuestions(): StreamedResponse
+    {
+        $filename = 'disc-bank-soal-' . now()->format('Ymd-His') . '.csv';
+
+        return response()->streamDownload(function () {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+
+            fputcsv($out, [
+                'no_soal',
+                'pernyataan_1',
+                'tipe_1',
+                'pernyataan_2',
+                'tipe_2',
+                'pernyataan_3',
+                'tipe_3',
+                'pernyataan_4',
+                'tipe_4',
+            ]);
+
+            DiscQuestion::with('statements')
+                ->orderBy('question_number')
+                ->get()
+                ->each(function (DiscQuestion $question) use ($out) {
+                    $statements = $question->statements->sortBy('id')->values();
+
+                    $row = [$question->question_number];
+                    for ($i = 0; $i < 4; $i++) {
+                        $row[] = $statements[$i]->text ?? '';
+                        $row[] = $statements[$i]->disc_type ?? '';
+                    }
+
+                    fputcsv($out, $row);
+                });
+
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function exportDiscManual(Request $request): StreamedResponse
+    {
+        [$startDate, $endDate] = $this->resolveDateRange($request);
+        $validated = $request->validate([
+            'session_id' => ['nullable', 'integer', 'exists:test_sessions,id'],
+        ]);
+
+        $user = $request->user();
+        $filename = 'disc-jawaban-manual-' . now()->format('Ymd-His') . '.csv';
+        $sessionId = $validated['session_id'] ?? null;
+
+        $query = DiscTest::with([
+            'session',
+            'answers.question',
+            'answers.pStatement',
+            'answers.kStatement',
+        ])->orderBy('started_at');
+
+        if ($sessionId) {
+            $query->where('test_session_id', $sessionId);
+        }
+        if (!$user->isSuperAdmin()) {
+            $query->where('client_id', $user->client_id);
+        }
+
+        $this->applyDateRange($query, $startDate, $endDate);
+        $tests = $query->get();
+
+        return response()->streamDownload(function () use ($tests) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+
+            fputcsv($out, $this->discManualHeader());
+
+            foreach ($tests as $test) {
+                fputcsv($out, $this->discManualRow($test));
             }
 
             fclose($out);
@@ -492,5 +580,104 @@ class AnalyticsController extends Controller
             'OCEAN' => [OceanTest::class, 10],
             default => [null, null],
         };
+    }
+
+    private function discManualHeader(): array
+    {
+        $header = [
+            'session_code',
+            'session_name',
+            'test_id',
+            'nama',
+            'institusi_perusahaan',
+            'departemen_divisi',
+            'jabatan_saat_ini',
+            'usia',
+            'jenis_kelamin',
+            'started_at',
+            'submitted_at',
+            'status',
+            'jumlah_terjawab',
+        ];
+
+        for ($i = 1; $i <= 24; $i++) {
+            $key = 'q' . str_pad((string) $i, 2, '0', STR_PAD_LEFT);
+            $header[] = "{$key}_p_tipe";
+            $header[] = "{$key}_p_pernyataan";
+            $header[] = "{$key}_k_tipe";
+            $header[] = "{$key}_k_pernyataan";
+        }
+
+        $header[] = 'd_total_manual';
+        $header[] = 'i_total_manual';
+        $header[] = 's_total_manual';
+        $header[] = 'c_total_manual';
+        $header[] = 'tipe_dominan_manual';
+
+        return $header;
+    }
+
+    private function discManualRow(DiscTest $test): array
+    {
+        $answersByNumber = $test->answers
+            ->filter(fn ($answer) => $answer->question)
+            ->keyBy(fn ($answer) => (int) $answer->question->question_number);
+
+        $scores = ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0];
+        $answeredCount = 0;
+
+        $identity = [
+            $test->session?->code,
+            $test->session?->name,
+            $test->id,
+            $test->nama,
+            $test->institusi_perusahaan,
+            $test->departemen_divisi,
+            $test->jabatan_saat_ini,
+            $test->usia,
+            $test->jenis_kelamin,
+            optional($test->started_at)->format('Y-m-d H:i:s'),
+            optional($test->submitted_at)->format('Y-m-d H:i:s'),
+            $this->statusLabel($test->submitted_at, $test->started_at, 15),
+        ];
+        $questionColumns = [];
+
+        for ($i = 1; $i <= 24; $i++) {
+            $answer = $answersByNumber->get($i);
+            $pType = $answer?->pStatement?->disc_type;
+            $kType = $answer?->kStatement?->disc_type;
+            $pText = $answer?->pStatement?->text;
+            $kText = $answer?->kStatement?->text;
+
+            if ($answer) {
+                $answeredCount++;
+            }
+
+            if (isset($scores[$pType])) {
+                $scores[$pType]++;
+            }
+            if (isset($scores[$kType])) {
+                $scores[$kType]--;
+            }
+
+            $questionColumns[] = $pType;
+            $questionColumns[] = $pText;
+            $questionColumns[] = $kType;
+            $questionColumns[] = $kText;
+        }
+
+        $max = max($scores);
+        $dominants = array_keys(array_filter($scores, fn ($value) => $value === $max));
+
+        return [
+            ...$identity,
+            $answeredCount,
+            ...$questionColumns,
+            $scores['D'],
+            $scores['I'],
+            $scores['S'],
+            $scores['C'],
+            implode('/', $dominants),
+        ];
     }
 }
