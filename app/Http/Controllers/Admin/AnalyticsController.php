@@ -158,7 +158,7 @@ class AnalyticsController extends Controller
 
     public function exportDiscManual(Request $request): StreamedResponse
     {
-        [$startDate, $endDate] = $this->resolveDateRange($request);
+        [$startDate, $endDate] = $this->resolveOptionalDateRange($request);
         $validated = $request->validate([
             'session_id' => ['nullable', 'integer', 'exists:test_sessions,id'],
         ]);
@@ -170,8 +170,8 @@ class AnalyticsController extends Controller
         $query = DiscTest::with([
             'session',
             'answers.question',
-            'answers.pStatement',
-            'answers.kStatement',
+            'answers.pStatement.question',
+            'answers.kStatement.question',
         ])->orderBy('started_at');
 
         if ($sessionId) {
@@ -181,7 +181,9 @@ class AnalyticsController extends Controller
             $query->where('client_id', $user->client_id);
         }
 
-        $this->applyDateRange($query, $startDate, $endDate);
+        if ($startDate && $endDate) {
+            $this->applyDateRange($query, $startDate, $endDate);
+        }
         $tests = $query->get();
 
         return response()->streamDownload(function () use ($tests) {
@@ -240,6 +242,29 @@ class AnalyticsController extends Controller
         return [$startDate, $endDate, $activePreset];
     }
 
+    private function resolveOptionalDateRange(Request $request): array
+    {
+        $validated = $request->validate([
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date'],
+        ]);
+
+        $startDate = isset($validated['start_date']) ? Carbon::parse($validated['start_date'])->startOfDay() : null;
+        $endDate = isset($validated['end_date']) ? Carbon::parse($validated['end_date'])->endOfDay() : null;
+
+        if ($startDate && !$endDate) {
+            $endDate = now()->endOfDay();
+        } elseif (!$startDate && $endDate) {
+            $startDate = $endDate->copy()->startOfDay();
+        }
+
+        if ($startDate && $endDate && $startDate->gt($endDate)) {
+            [$startDate, $endDate] = [$endDate->copy()->startOfDay(), $startDate->copy()->endOfDay()];
+        }
+
+        return [$startDate, $endDate];
+    }
+
     private function sessionStats(TestSession $session, Carbon $startDate, Carbon $endDate): array
     {
         [$modelClass, $timeLimitMinutes] = $this->resolver($session->test_type);
@@ -287,7 +312,7 @@ class AnalyticsController extends Controller
             ->whereBetween('submitted_at', [$startDate, $endDate])
             ->get(['started_at', 'submitted_at'])
             ->avg(function ($item) {
-                return Carbon::parse($item->submitted_at)->diffInSeconds(Carbon::parse($item->started_at));
+                return $this->safeDurationSeconds($item->started_at, $item->submitted_at);
             });
 
         return [
@@ -569,7 +594,15 @@ class AnalyticsController extends Controller
             return null;
         }
 
-        return Carbon::parse($submittedAt)->diffInSeconds(Carbon::parse($startedAt));
+        return $this->safeDurationSeconds($startedAt, $submittedAt);
+    }
+
+    private function safeDurationSeconds($startedAt, $submittedAt): int
+    {
+        $startedTs = Carbon::parse($startedAt)->timestamp;
+        $submittedTs = Carbon::parse($submittedAt)->timestamp;
+
+        return max(0, $submittedTs - $startedTs);
     }
 
     private function resolver(string $testType): array
@@ -619,9 +652,14 @@ class AnalyticsController extends Controller
 
     private function discManualRow(DiscTest $test): array
     {
-        $answersByNumber = $test->answers
-            ->filter(fn ($answer) => $answer->question)
-            ->keyBy(fn ($answer) => (int) $answer->question->question_number);
+        static $questionIdByNumber = null;
+        if ($questionIdByNumber === null) {
+            $questionIdByNumber = DiscQuestion::query()
+                ->pluck('id', 'question_number')
+                ->map(fn ($id) => (int) $id);
+        }
+
+        $answersByQuestionId = $test->answers->keyBy('disc_question_id');
 
         $scores = ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0];
         $answeredCount = 0;
@@ -643,7 +681,8 @@ class AnalyticsController extends Controller
         $questionColumns = [];
 
         for ($i = 1; $i <= 24; $i++) {
-            $answer = $answersByNumber->get($i);
+            $questionId = $questionIdByNumber->get($i);
+            $answer = $questionId ? $answersByQuestionId->get($questionId) : null;
             $pType = $answer?->pStatement?->disc_type;
             $kType = $answer?->kStatement?->disc_type;
             $pText = $answer?->pStatement?->text;

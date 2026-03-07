@@ -85,7 +85,7 @@
             <a href="/admin/exports/tests.csv?type=MBTI&{{ $queryString }}" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export MBTI</a>
             <a href="/admin/exports/tests.csv?type=OCEAN&{{ $queryString }}" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export OCEAN</a>
             <a href="/admin/exports/disc/questions.csv" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export Bank Soal DISC</a>
-            <a href="/admin/exports/disc/manual.csv?{{ $queryString }}" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export Jawaban DISC (Manual)</a>
+            <a href="/admin/exports/disc/manual.csv" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export Jawaban DISC (Manual)</a>
         </div>
     </section>
 
@@ -101,6 +101,15 @@
                 </thead>
                 <tbody>
                     @forelse($rows as $item)
+                        @php
+                            $avgSeconds = $item['avg_duration_seconds'];
+                            $avgDurationLabel = 'Belum ada peserta selesai';
+                            if ($avgSeconds !== null) {
+                                $minutes = intdiv($avgSeconds, 60);
+                                $seconds = $avgSeconds % 60;
+                                $avgDurationLabel = $minutes . ' menit ' . $seconds . ' detik';
+                            }
+                        @endphp
                         <tr class="border-b border-slate-100 align-top">
                             <td class="py-4 pr-4 font-semibold">{{ $item['session']->code }}</td>
                             <td class="py-4 pr-4">{{ $item['session']->name }}</td>
@@ -110,12 +119,14 @@
                             <td class="py-4 pr-4 text-emerald-600 font-semibold">{{ $item['completed'] }}</td>
                             <td class="py-4 pr-4 text-amber-600 font-semibold">{{ $item['timeout'] }}</td>
                             <td class="py-4 pr-4">{{ $item['in_progress'] }}</td>
-                            <td class="py-4 pr-4">{{ $item['avg_duration_seconds'] !== null ? $item['avg_duration_seconds'] . ' detik' : '-' }}</td>
-                            <td class="py-4 space-x-2">
-                                <a href="/admin/exports/sessions/{{ $item['session']->id }}.csv?{{ $queryString }}" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export Sesi</a>
+                            <td class="py-4 pr-4">{{ $avgDurationLabel }}</td>
+                            <td class="py-4 min-w-[240px]">
+                                <div class="flex flex-wrap gap-2">
+                                <a href="/admin/exports/sessions/{{ $item['session']->id }}.csv?{{ $queryString }}" class="inline-flex whitespace-nowrap px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export Sesi</a>
                                 @if($item['session']->test_type === 'DISC')
-                                    <a href="/admin/exports/disc/manual.csv?session_id={{ $item['session']->id }}&{{ $queryString }}" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export Manual DISC</a>
+                                    <a href="/admin/exports/disc/manual.csv?session_id={{ $item['session']->id }}" class="inline-flex whitespace-nowrap px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export Manual DISC</a>
                                 @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -127,15 +138,24 @@
 
         <div class="grid grid-cols-1 gap-3 xl:hidden">
             @forelse($rows as $item)
+                @php
+                    $avgSeconds = $item['avg_duration_seconds'];
+                    $avgDurationLabel = 'Belum ada peserta selesai';
+                    if ($avgSeconds !== null) {
+                        $minutes = intdiv($avgSeconds, 60);
+                        $seconds = $avgSeconds % 60;
+                        $avgDurationLabel = $minutes . ' menit ' . $seconds . ' detik';
+                    }
+                @endphp
                 <article class="rounded-xl border border-slate-200 p-4 bg-slate-50 space-y-1">
                     <div class="font-bold text-slate-900">{{ $item['session']->code }} • {{ $item['session']->name }}</div>
                     <div class="text-sm text-slate-600">{{ $item['session']->test_type }} • {{ $item['session']->client->name ?? '-' }}</div>
                     <div class="text-sm text-slate-700">Mulai {{ $item['started'] }} | Selesai {{ $item['completed'] }} | Timeout {{ $item['timeout'] }} | In Progress {{ $item['in_progress'] }}</div>
-                    <div class="text-sm text-slate-500">Avg Durasi: {{ $item['avg_duration_seconds'] !== null ? $item['avg_duration_seconds'] . ' detik' : '-' }}</div>
+                    <div class="text-sm text-slate-500">Avg Durasi: {{ $avgDurationLabel }}</div>
                     <div class="pt-1 flex flex-wrap gap-2">
                         <a href="/admin/exports/sessions/{{ $item['session']->id }}.csv?{{ $queryString }}" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold">Export Sesi</a>
                         @if($item['session']->test_type === 'DISC')
-                            <a href="/admin/exports/disc/manual.csv?session_id={{ $item['session']->id }}&{{ $queryString }}" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold">Export Manual DISC</a>
+                            <a href="/admin/exports/disc/manual.csv?session_id={{ $item['session']->id }}" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold">Export Manual DISC</a>
                         @endif
                     </div>
                 </article>

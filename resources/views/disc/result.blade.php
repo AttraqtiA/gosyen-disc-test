@@ -24,11 +24,11 @@
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 sm:p-7">
         <h2 class="text-xl font-bold text-slate-900 mb-3">Skor DISC</h2>
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>D:</strong> {{ $result->d_score }}</div>
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>I:</strong> {{ $result->i_score }}</div>
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>S:</strong> {{ $result->s_score }}</div>
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3"><strong>C:</strong> {{ $result->c_score }}</div>
-            <div class="rounded-xl border border-brand-200 bg-brand-50 p-3"><strong>Dominan:</strong> {{ $result->dominant_type ?: '-' }}</div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-900"><strong>D:</strong> {{ $result->d_score }}</div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-900"><strong>I:</strong> {{ $result->i_score }}</div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-900"><strong>S:</strong> {{ $result->s_score }}</div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-900"><strong>C:</strong> {{ $result->c_score }}</div>
+            <div class="rounded-xl border border-brand-200 bg-brand-50 p-3 text-slate-900"><strong>Dominan:</strong> {{ $result->dominant_type ?: '-' }}</div>
         </div>
     </div>
 

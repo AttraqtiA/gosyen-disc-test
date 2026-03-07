@@ -227,7 +227,9 @@ class DiscTestController extends Controller
             return self::TIME_LIMIT_MINUTES * 60;
         }
 
-        return max(0, self::TIME_LIMIT_MINUTES * 60 - now()->diffInSeconds($test->started_at));
+        $elapsed = max(0, now()->timestamp - $test->started_at->timestamp);
+
+        return max(0, self::TIME_LIMIT_MINUTES * 60 - $elapsed);
     }
 
     private function isTimeExpired(DiscTest $test): bool
