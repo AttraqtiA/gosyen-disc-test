@@ -39,10 +39,8 @@ Route::get('/ocean/test/{test}/question/{number}', [OceanTestController::class, 
 Route::post('/ocean/test/{test}/answer', [OceanTestController::class, 'answer']);
 Route::get('/ocean/test/{test}/result', [OceanResultController::class, 'show']);
 
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
-});
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
