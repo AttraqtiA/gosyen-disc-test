@@ -72,12 +72,14 @@ class DiscFlowTest extends TestCase
         $questions = DiscQuestion::with('statements')->orderBy('question_number')->get();
         foreach ($questions as $question) {
             $statements = $question->statements->values();
+            $action = $question->question_number === 24 ? 'finish' : 'next';
 
             $this->post("/test/{$testId}/answer", [
                 'disc_question_id' => $question->id,
                 'question_number' => $question->question_number,
                 'p' => $statements[0]->id,
                 'k' => $statements[1]->id,
+                'action' => $action,
             ])->assertRedirect();
         }
 
@@ -107,6 +109,72 @@ class DiscFlowTest extends TestCase
         $this->assertSame('24', $row[$idxAnswered]);
     }
 
+    public function test_disc_cannot_finish_if_not_all_questions_are_answered(): void
+    {
+        $this->seed(DiscQuestionSeeder::class);
+        $session = $this->createDiscSession();
+
+        $this->post('/start', [
+            'access_code' => $session->code,
+            'nama' => 'Peserta Incomplete',
+            'institusi_perusahaan' => 'PT QA',
+            'departemen_divisi' => 'Quality',
+            'usia' => 27,
+            'jenis_kelamin' => 'L',
+        ]);
+
+        $testId = (int) DiscTest::query()->value('id');
+        $firstQuestion = DiscQuestion::with('statements')->where('question_number', 1)->firstOrFail();
+
+        $response = $this->from("/test/{$testId}/question/1")
+            ->post("/test/{$testId}/answer", [
+                'disc_question_id' => $firstQuestion->id,
+                'question_number' => 1,
+                'p' => $firstQuestion->statements[0]->id,
+                'k' => $firstQuestion->statements[1]->id,
+                'action' => 'finish',
+            ]);
+
+        $response->assertRedirect("/test/{$testId}/question/1");
+        $response->assertSessionHasErrors('p');
+        $this->assertNull(DiscTest::findOrFail($testId)->submitted_at);
+    }
+
+    public function test_disc_goto_action_saves_current_answer_before_redirecting(): void
+    {
+        $this->seed(DiscQuestionSeeder::class);
+        $session = $this->createDiscSession();
+
+        $this->post('/start', [
+            'access_code' => $session->code,
+            'nama' => 'Peserta Goto',
+            'institusi_perusahaan' => 'PT QA',
+            'departemen_divisi' => 'Quality',
+            'usia' => 27,
+            'jenis_kelamin' => 'L',
+        ]);
+
+        $testId = (int) DiscTest::query()->value('id');
+        $firstQuestion = DiscQuestion::with('statements')->where('question_number', 1)->firstOrFail();
+
+        $response = $this->post("/test/{$testId}/answer", [
+            'disc_question_id' => $firstQuestion->id,
+            'question_number' => 1,
+            'p' => $firstQuestion->statements[0]->id,
+            'k' => $firstQuestion->statements[1]->id,
+            'action' => 'goto',
+            'target_number' => 7,
+        ]);
+
+        $response->assertRedirect("/test/{$testId}/question/7");
+        $this->assertDatabaseHas('disc_answers', [
+            'disc_test_id' => $testId,
+            'disc_question_id' => $firstQuestion->id,
+            'p_statement_id' => $firstQuestion->statements[0]->id,
+            'k_statement_id' => $firstQuestion->statements[1]->id,
+        ]);
+    }
+
     private function createDiscSession(): TestSession
     {
         return TestSession::create([
@@ -117,4 +185,3 @@ class DiscFlowTest extends TestCase
         ]);
     }
 }
-

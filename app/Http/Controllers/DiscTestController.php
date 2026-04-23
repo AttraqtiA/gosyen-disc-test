@@ -168,9 +168,19 @@ class DiscTestController extends Controller
             ->where('disc_question_id', $question->id)
             ->first();
 
+        $answeredNumbers = DiscAnswer::where('disc_test_id', $test->id)
+            ->pluck('disc_question_id')
+            ->all();
+
+        $questionNumbersById = DiscQuestion::query()
+            ->whereIn('id', $answeredNumbers)
+            ->pluck('question_number')
+            ->map(fn ($value) => (int) $value)
+            ->all();
+
         $remainingSeconds = $this->remainingSeconds($test);
 
-        return view('disc.question', compact('test', 'question', 'number', 'existingAnswer', 'remainingSeconds'));
+        return view('disc.question', compact('test', 'question', 'number', 'existingAnswer', 'remainingSeconds', 'questionNumbersById'));
     }
 
     public function answer(Request $request, DiscTest $test)
@@ -183,42 +193,73 @@ class DiscTestController extends Controller
         $validated = $request->validate([
             'disc_question_id' => ['required', 'exists:disc_questions,id'],
             'question_number' => ['required', 'integer', 'min:1', 'max:' . self::TOTAL_QUESTIONS],
-            'p' => ['required', 'different:k', 'exists:disc_statements,id'],
-            'k' => ['required', 'different:p', 'exists:disc_statements,id'],
+            'p' => ['nullable', 'different:k', 'exists:disc_statements,id'],
+            'k' => ['nullable', 'different:p', 'exists:disc_statements,id'],
+            'action' => ['nullable', 'in:prev,next,goto,finish'],
+            'target_number' => ['nullable', 'integer', 'min:1', 'max:' . self::TOTAL_QUESTIONS],
         ]);
 
-        $statementCount = DiscQuestion::whereKey($validated['disc_question_id'])
-            ->whereHas('statements', function ($query) use ($validated) {
-                $query->whereIn('id', [$validated['p'], $validated['k']]);
-            }, '=', 2)
-            ->count();
+        $action = $validated['action'] ?? 'next';
+        $hasAnyAnswer = filled($validated['p'] ?? null) || filled($validated['k'] ?? null);
+        $hasCompleteAnswer = filled($validated['p'] ?? null) && filled($validated['k'] ?? null);
 
-        if ($statementCount === 0) {
+        if ($hasAnyAnswer && !$hasCompleteAnswer) {
             return back()->withErrors([
-                'p' => 'Pilihan P dan K harus berasal dari nomor soal yang sama.',
+                'p' => 'Lengkapi pilihan P dan K untuk menyimpan jawaban nomor ini.',
             ])->withInput();
         }
 
-        DiscAnswer::updateOrCreate(
-            [
-                'disc_test_id' => $test->id,
-                'disc_question_id' => $validated['disc_question_id'],
-            ],
-            [
-                'p_statement_id' => $validated['p'],
-                'k_statement_id' => $validated['k'],
-            ]
-        );
-
-        $next = $validated['question_number'] + 1;
-
-        if ($next > self::TOTAL_QUESTIONS) {
-            $test->update(['submitted_at' => now()]);
+        if ($action === 'finish' && !$hasCompleteAnswer && !$this->hasSavedAnswer($test, (int) $validated['disc_question_id'])) {
+            return back()->withErrors([
+                'p' => 'Nomor soal yang sedang dibuka belum terisi lengkap.',
+            ])->withInput();
         }
 
-        return $next <= self::TOTAL_QUESTIONS
-            ? redirect("/test/{$test->id}/question/{$next}")
-            : redirect("/test/{$test->id}/result");
+        if ($hasCompleteAnswer) {
+            $statementCount = DiscQuestion::whereKey($validated['disc_question_id'])
+                ->whereHas('statements', function ($query) use ($validated) {
+                    $query->whereIn('id', [$validated['p'], $validated['k']]);
+                }, '=', 2)
+                ->count();
+
+            if ($statementCount === 0) {
+                return back()->withErrors([
+                    'p' => 'Pilihan P dan K harus berasal dari nomor soal yang sama.',
+                ])->withInput();
+            }
+
+            DiscAnswer::updateOrCreate(
+                [
+                    'disc_test_id' => $test->id,
+                    'disc_question_id' => $validated['disc_question_id'],
+                ],
+                [
+                    'p_statement_id' => $validated['p'],
+                    'k_statement_id' => $validated['k'],
+                ]
+            );
+        }
+
+        if ($action === 'finish') {
+            if ($test->answers()->count() < self::TOTAL_QUESTIONS) {
+                return back()->withErrors([
+                    'p' => 'Tes hanya bisa diselesaikan setelah semua nomor terisi.',
+                ])->withInput();
+            }
+
+            $test->update(['submitted_at' => now()]);
+
+            return redirect("/test/{$test->id}/result");
+        }
+
+        $target = $this->resolveTargetNumber(
+            (int) $validated['question_number'],
+            $action,
+            isset($validated['target_number']) ? (int) $validated['target_number'] : null,
+            self::TOTAL_QUESTIONS
+        );
+
+        return redirect("/test/{$test->id}/question/{$target}");
     }
 
     private function remainingSeconds(DiscTest $test): int
@@ -235,5 +276,21 @@ class DiscTestController extends Controller
     private function isTimeExpired(DiscTest $test): bool
     {
         return $this->remainingSeconds($test) <= 0;
+    }
+
+    private function hasSavedAnswer(DiscTest $test, int $questionId): bool
+    {
+        return DiscAnswer::where('disc_test_id', $test->id)
+            ->where('disc_question_id', $questionId)
+            ->exists();
+    }
+
+    private function resolveTargetNumber(int $currentNumber, string $action, ?int $targetNumber, int $totalQuestions): int
+    {
+        return match ($action) {
+            'prev' => max(1, $currentNumber - 1),
+            'goto' => min($totalQuestions, max(1, $targetNumber ?? $currentNumber)),
+            default => min($totalQuestions, $currentNumber + 1),
+        };
     }
 }

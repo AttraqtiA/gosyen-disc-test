@@ -117,6 +117,11 @@ class MbtiTestController extends Controller
         $existingAnswer = MbtiAnswer::where('mbti_test_id', $test->id)
             ->where('mbti_question_id', $question->id)
             ->first();
+        $answeredNumbers = MbtiQuestion::query()
+            ->whereIn('id', MbtiAnswer::where('mbti_test_id', $test->id)->pluck('mbti_question_id'))
+            ->pluck('question_number')
+            ->map(fn ($value) => (int) $value)
+            ->all();
         $remainingSeconds = $this->remainingSeconds($test);
 
         return view('mbti.question', compact(
@@ -125,7 +130,8 @@ class MbtiTestController extends Controller
             'number',
             'existingAnswer',
             'remainingSeconds',
-            'totalQuestions'
+            'totalQuestions',
+            'answeredNumbers'
         ));
     }
 
@@ -141,34 +147,51 @@ class MbtiTestController extends Controller
         $validated = $request->validate([
             'mbti_question_id' => ['required', 'exists:mbti_questions,id'],
             'question_number' => ['required', 'integer', 'min:1', 'max:' . max($totalQuestions, 1)],
-            'selected_trait' => ['required', 'in:E,I,S,N,T,F,J,P'],
+            'selected_trait' => ['nullable', 'in:E,I,S,N,T,F,J,P'],
+            'action' => ['nullable', 'in:prev,next,goto,finish'],
+            'target_number' => ['nullable', 'integer', 'min:1', 'max:' . max($totalQuestions, 1)],
         ]);
 
+        $action = $validated['action'] ?? 'next';
+
         $question = MbtiQuestion::findOrFail($validated['mbti_question_id']);
-        if (!in_array($validated['selected_trait'], [$question->trait_a, $question->trait_b], true)) {
+        if (filled($validated['selected_trait'] ?? null) && !in_array($validated['selected_trait'], [$question->trait_a, $question->trait_b], true)) {
             return back()->withErrors([
                 'selected_trait' => 'Pilihan jawaban tidak valid untuk nomor soal ini.',
             ])->withInput();
         }
 
-        MbtiAnswer::updateOrCreate(
-            [
-                'mbti_test_id' => $test->id,
-                'mbti_question_id' => $question->id,
-            ],
-            [
-                'selected_trait' => $validated['selected_trait'],
-            ]
-        );
-
-        $next = $validated['question_number'] + 1;
-        if ($next > $totalQuestions) {
-            $test->update(['submitted_at' => now()]);
+        if (filled($validated['selected_trait'] ?? null)) {
+            MbtiAnswer::updateOrCreate(
+                [
+                    'mbti_test_id' => $test->id,
+                    'mbti_question_id' => $question->id,
+                ],
+                [
+                    'selected_trait' => $validated['selected_trait'],
+                ]
+            );
         }
 
-        return $next <= $totalQuestions
-            ? redirect("/mbti/test/{$test->id}/question/{$next}")
-            : redirect("/mbti/test/{$test->id}/result");
+        if ($action === 'finish') {
+            if ($test->answers()->count() < $totalQuestions) {
+                return back()->withErrors([
+                    'selected_trait' => 'Tes hanya bisa diselesaikan setelah semua nomor terisi.',
+                ])->withInput();
+            }
+
+            $test->update(['submitted_at' => now()]);
+
+            return redirect("/mbti/test/{$test->id}/result");
+        }
+
+        $target = match ($action) {
+            'prev' => max(1, (int) $validated['question_number'] - 1),
+            'goto' => min($totalQuestions, max(1, (int) ($validated['target_number'] ?? $validated['question_number']))),
+            default => min($totalQuestions, (int) $validated['question_number'] + 1),
+        };
+
+        return redirect("/mbti/test/{$test->id}/question/{$target}");
     }
 
     private function remainingSeconds(MbtiTest $test): int

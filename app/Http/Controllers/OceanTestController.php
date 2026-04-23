@@ -117,6 +117,11 @@ class OceanTestController extends Controller
         $existingAnswer = OceanAnswer::where('ocean_test_id', $test->id)
             ->where('ocean_question_id', $question->id)
             ->first();
+        $answeredNumbers = OceanQuestion::query()
+            ->whereIn('id', OceanAnswer::where('ocean_test_id', $test->id)->pluck('ocean_question_id'))
+            ->pluck('question_number')
+            ->map(fn ($value) => (int) $value)
+            ->all();
         $remainingSeconds = $this->remainingSeconds($test);
 
         return view('ocean.question', compact(
@@ -125,7 +130,8 @@ class OceanTestController extends Controller
             'number',
             'existingAnswer',
             'remainingSeconds',
-            'totalQuestions'
+            'totalQuestions',
+            'answeredNumbers'
         ));
     }
 
@@ -141,27 +147,44 @@ class OceanTestController extends Controller
         $validated = $request->validate([
             'ocean_question_id' => ['required', 'exists:ocean_questions,id'],
             'question_number' => ['required', 'integer', 'min:1', 'max:' . max($totalQuestions, 1)],
-            'score' => ['required', 'integer', 'min:1', 'max:5'],
+            'score' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'action' => ['nullable', 'in:prev,next,goto,finish'],
+            'target_number' => ['nullable', 'integer', 'min:1', 'max:' . max($totalQuestions, 1)],
         ]);
 
-        OceanAnswer::updateOrCreate(
-            [
-                'ocean_test_id' => $test->id,
-                'ocean_question_id' => $validated['ocean_question_id'],
-            ],
-            [
-                'score' => $validated['score'],
-            ]
-        );
+        $action = $validated['action'] ?? 'next';
 
-        $next = $validated['question_number'] + 1;
-        if ($next > $totalQuestions) {
-            $test->update(['submitted_at' => now()]);
+        if (filled($validated['score'] ?? null)) {
+            OceanAnswer::updateOrCreate(
+                [
+                    'ocean_test_id' => $test->id,
+                    'ocean_question_id' => $validated['ocean_question_id'],
+                ],
+                [
+                    'score' => $validated['score'],
+                ]
+            );
         }
 
-        return $next <= $totalQuestions
-            ? redirect("/ocean/test/{$test->id}/question/{$next}")
-            : redirect("/ocean/test/{$test->id}/result");
+        if ($action === 'finish') {
+            if ($test->answers()->count() < $totalQuestions) {
+                return back()->withErrors([
+                    'score' => 'Tes hanya bisa diselesaikan setelah semua nomor terisi.',
+                ])->withInput();
+            }
+
+            $test->update(['submitted_at' => now()]);
+
+            return redirect("/ocean/test/{$test->id}/result");
+        }
+
+        $target = match ($action) {
+            'prev' => max(1, (int) $validated['question_number'] - 1),
+            'goto' => min($totalQuestions, max(1, (int) ($validated['target_number'] ?? $validated['question_number']))),
+            default => min($totalQuestions, (int) $validated['question_number'] + 1),
+        };
+
+        return redirect("/ocean/test/{$test->id}/question/{$target}");
     }
 
     private function remainingSeconds(OceanTest $test): int
