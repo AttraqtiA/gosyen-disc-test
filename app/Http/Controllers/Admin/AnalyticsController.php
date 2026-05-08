@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomTestSubmission;
 use App\Models\DiscQuestion;
 use App\Models\DiscTest;
 use App\Models\MbtiTest;
@@ -267,6 +268,10 @@ class AnalyticsController extends Controller
 
     private function sessionStats(TestSession $session, Carbon $startDate, Carbon $endDate): array
     {
+        if (strtoupper($session->test_type) === 'CUSTOM') {
+            return $this->customSessionStats($session, $startDate, $endDate);
+        }
+
         [$modelClass, $timeLimitMinutes] = $this->resolver($session->test_type);
 
         if (!$modelClass || !$timeLimitMinutes) {
@@ -324,6 +329,51 @@ class AnalyticsController extends Controller
         ];
     }
 
+    private function customSessionStats(TestSession $session, Carbon $startDate, Carbon $endDate): array
+    {
+        $submissions = CustomTestSubmission::query()
+            ->with('customTest')
+            ->where('test_session_id', $session->id)
+            ->whereNotNull('packet_attempt_uuid')
+            ->whereNotNull('started_at')
+            ->whereBetween('started_at', [$startDate, $endDate])
+            ->get()
+            ->groupBy('packet_attempt_uuid');
+
+        $started = $submissions->count();
+        $completed = 0;
+        $timeout = 0;
+        $inProgress = 0;
+        $durations = [];
+
+        foreach ($submissions as $group) {
+            $ordered = $group->sortBy('packet_index')->values();
+            $first = $ordered->first();
+            $allSubmitted = $ordered->every(fn ($item) => $item->submitted_at !== null);
+            $limitMinutes = (int) $ordered->sum(fn ($item) => $item->customTest?->time_limit_minutes ?? 0);
+
+            if ($allSubmitted) {
+                $completed++;
+                $durations[] = $this->safeDurationSeconds($first->started_at, $ordered->max('submitted_at'));
+                continue;
+            }
+
+            if ($limitMinutes > 0 && Carbon::parse($first->started_at)->lte(now()->subMinutes($limitMinutes))) {
+                $timeout++;
+            } else {
+                $inProgress++;
+            }
+        }
+
+        return [
+            'started' => $started,
+            'completed' => $completed,
+            'timeout' => $timeout,
+            'in_progress' => $inProgress,
+            'avg_duration_seconds' => count($durations) > 0 ? (int) round(array_sum($durations) / count($durations)) : null,
+        ];
+    }
+
     private function dailyTrend(Carbon $startDate, Carbon $endDate, ?int $clientId = null): array
     {
         $started = [];
@@ -342,6 +392,7 @@ class AnalyticsController extends Controller
         $this->fillTrendForModel(DiscTest::class, 15, $startDate, $endDate, $started, $completed, $timeout, $clientId);
         $this->fillTrendForModel(MbtiTest::class, 12, $startDate, $endDate, $started, $completed, $timeout, $clientId);
         $this->fillTrendForModel(OceanTest::class, 10, $startDate, $endDate, $started, $completed, $timeout, $clientId);
+        $this->fillTrendForCustom($startDate, $endDate, $started, $completed, $timeout, $clientId);
 
         return [
             'labels' => array_keys($started),
@@ -531,6 +582,63 @@ class AnalyticsController extends Controller
             }
         }
 
+        if ($type === 'ALL' || $type === 'CUSTOM') {
+            $query = CustomTestSubmission::with(['session', 'client', 'customTest', 'answers'])
+                ->whereNotNull('packet_attempt_uuid');
+            if ($sessionId) {
+                $query->where('test_session_id', $sessionId);
+            }
+            if ($clientId) {
+                $query->where('client_id', $clientId);
+            }
+            $this->applyDateRange($query, $startDate, $endDate);
+
+            $grouped = $query->get()->groupBy(fn ($item) => $item->test_session_id . '|' . $item->packet_attempt_uuid);
+
+            foreach ($grouped as $submissions) {
+                $ordered = $submissions->sortBy('packet_index')->values();
+                $first = $ordered->first();
+                $last = $ordered->sortByDesc('packet_index')->first();
+                $startedAt = $ordered->min('started_at');
+                $submittedAt = $ordered->contains(fn ($item) => !$item->submitted_at) ? null : $ordered->max('submitted_at');
+                $duration = $this->durationSeconds($startedAt, $submittedAt);
+                $scores = $ordered->map(function ($item) {
+                    $raw = $item->answers->sum(fn ($answer) => array_sum($answer->auto_scores_json ?? []));
+
+                    return $item->customTest?->code . '=' . $raw;
+                })->filter()->implode(';');
+                $totalRaw = $ordered->sum(fn ($item) => $item->answers->sum(fn ($answer) => array_sum($answer->auto_scores_json ?? [])));
+                $avgRaw = $ordered->count() > 0 ? round($totalRaw / $ordered->count(), 2) : 0;
+
+                $rows[] = [
+                    $first->session?->code,
+                    $first->session?->name,
+                    'CUSTOM',
+                    $first->packet_attempt_uuid,
+                    $first->nama,
+                    $first->email,
+                    $first->nomor_hp,
+                    $first->institusi_perusahaan,
+                    $first->departemen_divisi,
+                    $first->jabatan_saat_ini,
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    optional($startedAt)->format('Y-m-d'),
+                    optional($startedAt)->format('Y-m-d H:i:s'),
+                    optional($submittedAt)->format('Y-m-d H:i:s'),
+                    $duration,
+                    $this->customStatusLabel($ordered, $last?->session),
+                    trim($scores . ';TOTAL_RAW=' . $totalRaw . ';AVG_RAW=' . $avgRaw, ';'),
+                    '',
+                    '',
+                ];
+            }
+        }
+
         return $rows;
     }
 
@@ -611,8 +719,72 @@ class AnalyticsController extends Controller
             'DISC' => [DiscTest::class, 15],
             'MBTI' => [MbtiTest::class, 12],
             'OCEAN' => [OceanTest::class, 10],
+            'CUSTOM' => [CustomTestSubmission::class, null],
             default => [null, null],
         };
+    }
+
+    private function customStatusLabel($ordered, ?TestSession $session): string
+    {
+        if ($ordered->every(fn ($item) => $item->submitted_at !== null)) {
+            return 'COMPLETED';
+        }
+
+        $limitMinutes = (int) $ordered->sum(fn ($item) => $item->customTest?->time_limit_minutes ?? 0);
+        $startedAt = $ordered->min('started_at');
+
+        if ($startedAt && $limitMinutes > 0 && Carbon::parse($startedAt)->lte(now()->subMinutes($limitMinutes))) {
+            return 'TIMEOUT';
+        }
+
+        if ($startedAt) {
+            return 'IN_PROGRESS';
+        }
+
+        return 'NOT_STARTED';
+    }
+
+    private function fillTrendForCustom(
+        Carbon $startDate,
+        Carbon $endDate,
+        array &$started,
+        array &$completed,
+        array &$timeout,
+        ?int $clientId = null
+    ): void {
+        $query = CustomTestSubmission::query()
+            ->with('customTest')
+            ->whereNotNull('packet_attempt_uuid')
+            ->whereNotNull('started_at')
+            ->whereBetween('started_at', [$startDate, $endDate]);
+
+        if ($clientId) {
+            $query->where('client_id', $clientId);
+        }
+
+        $groups = $query->get()->groupBy(fn ($item) => $item->test_session_id . '|' . $item->packet_attempt_uuid);
+
+        foreach ($groups as $items) {
+            $ordered = $items->sortBy('packet_index')->values();
+            $first = $ordered->first();
+            $startedKey = Carbon::parse($first->started_at)->toDateString();
+            if (array_key_exists($startedKey, $started)) {
+                $started[$startedKey]++;
+            }
+
+            if ($ordered->every(fn ($item) => $item->submitted_at !== null)) {
+                $completedKey = Carbon::parse($ordered->max('submitted_at'))->toDateString();
+                if (array_key_exists($completedKey, $completed)) {
+                    $completed[$completedKey]++;
+                }
+                continue;
+            }
+
+            $limitMinutes = (int) $ordered->sum(fn ($item) => $item->customTest?->time_limit_minutes ?? 0);
+            if ($limitMinutes > 0 && Carbon::parse($first->started_at)->lte(now()->subMinutes($limitMinutes)) && array_key_exists($startedKey, $timeout)) {
+                $timeout[$startedKey]++;
+            }
+        }
     }
 
     private function discManualHeader(): array

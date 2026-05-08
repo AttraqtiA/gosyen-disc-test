@@ -44,4 +44,9 @@ class TestSession extends Model
     {
         return $this->hasMany(CustomTestSubmission::class, 'test_session_id');
     }
+
+    public function customTestItems()
+    {
+        return $this->hasMany(CustomTestSessionItem::class)->orderBy('sort_order');
+    }
 }

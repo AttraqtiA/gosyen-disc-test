@@ -6,7 +6,7 @@
 <div class="min-h-screen flex items-center justify-center px-4 py-10 sm:px-6">
     <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-sm p-6 sm:p-8">
         <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">Tes Kepribadian</h1>
-        <p class="mt-2 text-slate-600">Masukkan kode sesi dari admin untuk memulai tes (DISC, MBTI, atau OCEAN).</p>
+        <p class="mt-2 text-slate-600">Masukkan kode sesi dari admin untuk memulai tes (DISC, MBTI, OCEAN, atau custom packet seperti IST).</p>
 
         @error('code')
             <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ $message }}</div>

@@ -8,10 +8,11 @@ use App\Http\Controllers\MbtiTestController;
 use App\Http\Controllers\MbtiResultController;
 use App\Http\Controllers\OceanTestController;
 use App\Http\Controllers\OceanResultController;
+use App\Http\Controllers\CustomTestController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\TestSessionController;
 use App\Http\Controllers\Admin\PositionController;
-use App\Http\Controllers\Admin\CustomTestController;
+use App\Http\Controllers\Admin\CustomTestController as AdminCustomTestController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\ReviewController;
 
@@ -38,6 +39,12 @@ Route::post('/ocean/start', [OceanTestController::class, 'storeMeta']);
 Route::get('/ocean/test/{test}/question/{number}', [OceanTestController::class, 'question']);
 Route::post('/ocean/test/{test}/answer', [OceanTestController::class, 'answer']);
 Route::get('/ocean/test/{test}/result', [OceanResultController::class, 'show']);
+
+Route::get('/custom/start/{code}', [CustomTestController::class, 'start']);
+Route::post('/custom/start', [CustomTestController::class, 'storeMeta']);
+Route::get('/custom/test/{submission}/question/{number}', [CustomTestController::class, 'question']);
+Route::post('/custom/test/{submission}/answer', [CustomTestController::class, 'answer']);
+Route::get('/custom/test/{submission}/result', [CustomTestController::class, 'result']);
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -69,21 +76,21 @@ Route::middleware('auth')->group(function () {
         Route::post('/admin/positions/{position}/clients', [PositionController::class, 'attachClient']);
         Route::delete('/admin/positions/{position}/clients/{client}', [PositionController::class, 'detachClient']);
 
-        Route::get('/admin/custom-tests', [CustomTestController::class, 'index']);
+        Route::get('/admin/custom-tests', [AdminCustomTestController::class, 'index']);
         Route::get('/admin/analytics', [AnalyticsController::class, 'index']);
         Route::get('/admin/exports/tests.csv', [AnalyticsController::class, 'exportAll']);
         Route::get('/admin/exports/sessions/{session}.csv', [AnalyticsController::class, 'exportSession']);
         Route::get('/admin/exports/disc/questions.csv', [AnalyticsController::class, 'exportDiscQuestions']);
         Route::get('/admin/exports/disc/manual.csv', [AnalyticsController::class, 'exportDiscManual']);
-        Route::post('/admin/custom-tests', [CustomTestController::class, 'store']);
-        Route::patch('/admin/custom-tests/{test}', [CustomTestController::class, 'update']);
-        Route::delete('/admin/custom-tests/{test}', [CustomTestController::class, 'destroy']);
-        Route::patch('/admin/custom-tests/{test}/toggle', [CustomTestController::class, 'toggle']);
-        Route::get('/admin/custom-tests/{test}', [CustomTestController::class, 'show']);
-        Route::post('/admin/custom-tests/{test}/dimensions', [CustomTestController::class, 'storeDimension']);
-        Route::post('/admin/custom-tests/{test}/questions', [CustomTestController::class, 'storeQuestion']);
-        Route::post('/admin/custom-tests/{test}/questions/{question}/options', [CustomTestController::class, 'storeOption']);
-        Route::post('/admin/custom-tests/{test}/position-rules', [CustomTestController::class, 'upsertPositionRule']);
+        Route::post('/admin/custom-tests', [AdminCustomTestController::class, 'store']);
+        Route::patch('/admin/custom-tests/{test}', [AdminCustomTestController::class, 'update']);
+        Route::delete('/admin/custom-tests/{test}', [AdminCustomTestController::class, 'destroy']);
+        Route::patch('/admin/custom-tests/{test}/toggle', [AdminCustomTestController::class, 'toggle']);
+        Route::get('/admin/custom-tests/{test}', [AdminCustomTestController::class, 'show']);
+        Route::post('/admin/custom-tests/{test}/dimensions', [AdminCustomTestController::class, 'storeDimension']);
+        Route::post('/admin/custom-tests/{test}/questions', [AdminCustomTestController::class, 'storeQuestion']);
+        Route::post('/admin/custom-tests/{test}/questions/{question}/options', [AdminCustomTestController::class, 'storeOption']);
+        Route::post('/admin/custom-tests/{test}/position-rules', [AdminCustomTestController::class, 'upsertPositionRule']);
     });
 
     Route::middleware('role:superadmin,reviewer')->group(function () {

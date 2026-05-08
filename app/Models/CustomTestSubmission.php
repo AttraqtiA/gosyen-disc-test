@@ -9,6 +9,9 @@ class CustomTestSubmission extends Model
     protected $fillable = [
         'custom_test_id',
         'test_session_id',
+        'packet_attempt_uuid',
+        'packet_index',
+        'packet_size',
         'client_id',
         'nama',
         'email',

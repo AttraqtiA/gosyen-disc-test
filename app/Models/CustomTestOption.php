@@ -9,6 +9,7 @@ class CustomTestOption extends Model
     protected $fillable = [
         'custom_test_question_id',
         'option_text',
+        'image_path',
         'scores_json',
         'sort_order',
     ];

@@ -9,6 +9,7 @@ class CustomTestQuestion extends Model
     protected $fillable = [
         'custom_test_id',
         'question_text',
+        'image_path',
         'question_type',
         'sort_order',
         'is_required',

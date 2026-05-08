@@ -84,6 +84,7 @@
             <a href="/admin/exports/tests.csv?type=DISC&{{ $queryString }}" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export DISC</a>
             <a href="/admin/exports/tests.csv?type=MBTI&{{ $queryString }}" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export MBTI</a>
             <a href="/admin/exports/tests.csv?type=OCEAN&{{ $queryString }}" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export OCEAN</a>
+            <a href="/admin/exports/tests.csv?type=CUSTOM&{{ $queryString }}" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export CUSTOM / Packet</a>
             <a href="/admin/exports/disc/questions.csv" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export Bank Soal DISC</a>
             <a href="/admin/exports/disc/manual.csv" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Export Jawaban DISC (Manual)</a>
         </div>

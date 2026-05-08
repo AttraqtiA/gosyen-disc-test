@@ -68,6 +68,7 @@
                     <option value="DISC">DISC</option>
                     <option value="MBTI">MBTI</option>
                     <option value="OCEAN">OCEAN (Big 5)</option>
+                    <option value="CUSTOM">CUSTOM / Packet</option>
                     <option value="OTHER">Other</option>
                 </select>
             </div>
@@ -87,6 +88,22 @@
             <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-1">Kedaluwarsa (opsional)</label>
                 <input name="expires_at" type="datetime-local" value="{{ old('expires_at') }}" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Custom Test Packet (untuk tipe CUSTOM)</label>
+                <div class="grid gap-2 md:grid-cols-2">
+                    @forelse($customTests as $customTest)
+                        <label class="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                            <input type="checkbox" name="custom_test_ids[]" value="{{ $customTest->id }}" class="mt-1 rounded border-slate-300 text-brand-500 focus:ring-brand-400">
+                            <div>
+                                <div class="font-semibold text-slate-900">{{ $customTest->name }} <span class="text-slate-500">({{ $customTest->code }})</span></div>
+                                <div class="text-sm text-slate-500">Durasi: {{ $customTest->time_limit_minutes ? $customTest->time_limit_minutes . ' menit' : 'tanpa batas' }}</div>
+                            </div>
+                        </label>
+                    @empty
+                        <div class="text-sm text-slate-500">Belum ada custom test aktif.</div>
+                    @endforelse
+                </div>
             </div>
             <div class="md:col-span-2">
                 <button class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold">Buat Kode Sesi</button>
@@ -114,7 +131,12 @@
                         <tr class="border-b border-slate-100 align-top">
                             <td class="py-4 pr-4 font-semibold">{{ $session->code }}</td>
                             <td class="py-4 pr-4">{{ $session->name }}</td>
-                            <td class="py-4 pr-4">{{ $session->test_type }}</td>
+                            <td class="py-4 pr-4">
+                                {{ $session->test_type }}
+                                @if($session->test_type === 'CUSTOM' && $session->customTestItems->isNotEmpty())
+                                    <div class="mt-1 text-xs text-slate-500">{{ $session->customTestItems->pluck('customTest.code')->implode(' -> ') }}</div>
+                                @endif
+                            </td>
                             <td class="py-4 pr-4">{{ $session->client->name ?? '-' }}</td>
                             <td class="py-4 pr-4">
                                 <span class="font-semibold {{ $session->is_active ? 'text-emerald-600' : 'text-rose-600' }}">{{ $session->is_active ? 'Aktif' : 'Nonaktif' }}</span>
@@ -137,6 +159,7 @@
                                                 <option value="DISC" @selected($session->test_type==='DISC')>DISC</option>
                                                 <option value="MBTI" @selected($session->test_type==='MBTI')>MBTI</option>
                                                 <option value="OCEAN" @selected($session->test_type==='OCEAN')>OCEAN (Big 5)</option>
+                                                <option value="CUSTOM" @selected($session->test_type==='CUSTOM')>CUSTOM / Packet</option>
                                                 <option value="OTHER" @selected($session->test_type==='OTHER')>Other</option>
                                             </select>
                                             <select name="client_id" class="rounded-lg border-slate-300">
@@ -147,6 +170,17 @@
                                             </select>
                                             <input name="client_name" placeholder="Atau nama client baru" class="rounded-lg border-slate-300">
                                             <input name="expires_at" type="datetime-local" value="{{ $session->expires_at?->format('Y-m-d\\TH:i') }}" class="rounded-lg border-slate-300">
+                                            <div class="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                                                <div class="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Packet Custom</div>
+                                                <div class="grid gap-2">
+                                                    @foreach($customTests as $customTest)
+                                                        <label class="flex items-center gap-2 text-sm text-slate-700">
+                                                            <input type="checkbox" name="custom_test_ids[]" value="{{ $customTest->id }}" @checked($session->customTestItems->pluck('custom_test_id')->contains($customTest->id)) class="rounded border-slate-300 text-brand-500 focus:ring-brand-400">
+                                                            <span>{{ $customTest->name }} ({{ $customTest->code }})</span>
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                            </div>
                                             <button class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold">Simpan Edit</button>
                                         </form>
                                     </details>
@@ -173,7 +207,12 @@
                         <span class="text-sm font-semibold {{ $session->is_active ? 'text-emerald-600' : 'text-rose-600' }}">{{ $session->is_active ? 'Aktif' : 'Nonaktif' }}</span>
                     </div>
                     <div class="text-sm text-slate-700">{{ $session->name }}</div>
-                    <div class="text-sm text-slate-500">{{ $session->test_type }} • {{ $session->client->name ?? '-' }}</div>
+                    <div class="text-sm text-slate-500">
+                        {{ $session->test_type }} • {{ $session->client->name ?? '-' }}
+                        @if($session->test_type === 'CUSTOM' && $session->customTestItems->isNotEmpty())
+                            • {{ $session->customTestItems->pluck('customTest.code')->implode(' -> ') }}
+                        @endif
+                    </div>
                     <div class="flex flex-wrap gap-2 pt-2">
                         <a href="/admin/exports/sessions/{{ $session->id }}.csv" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold">Export Sesi</a>
                         <form method="POST" action="/admin/sessions/{{ $session->id }}/toggle">@csrf @method('PATCH')<button class="px-3 py-2 rounded-lg bg-brand-500 text-white text-sm font-semibold">{{ $session->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button></form>

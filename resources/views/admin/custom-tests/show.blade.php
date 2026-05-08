@@ -74,7 +74,7 @@
     <section class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 md:p-7 space-y-4">
         <h2 class="text-xl font-bold text-slate-900">2) Pertanyaan & Jawaban + Logic Skor</h2>
 
-        <form method="POST" action="/admin/custom-tests/{{ $test->id }}/questions" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form method="POST" action="/admin/custom-tests/{{ $test->id }}/questions" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @csrf
             <div class="md:col-span-2">
                 <label class="block text-sm font-semibold text-slate-700 mb-1">Pertanyaan</label>
@@ -91,6 +91,10 @@
                 <label class="block text-sm font-semibold text-slate-700 mb-1">Urutan Soal</label>
                 <input type="number" min="1" max="9999" name="sort_order" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
             </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Gambar Soal (opsional)</label>
+                <input type="file" name="question_image" accept="image/*" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+            </div>
             <div class="flex items-end">
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
                     <input type="checkbox" name="is_required" value="1" checked class="rounded border-slate-300 text-brand-500 focus:ring-brand-400">
@@ -105,6 +109,9 @@
         @foreach($test->questions as $question)
             <article class="rounded-xl border border-slate-200 p-4 bg-slate-50 space-y-3">
                 <div class="font-semibold text-slate-900">Q{{ $question->sort_order }}. {{ $question->question_text }}</div>
+                @if($question->image_path)
+                    <img src="{{ asset('storage/' . $question->image_path) }}" alt="Gambar soal {{ $question->sort_order }}" class="max-h-72 rounded-xl border border-slate-200 bg-white p-2">
+                @endif
                 <div class="text-sm text-slate-500">Tipe: {{ $question->question_type }} | Required: {{ $question->is_required ? 'Ya' : 'Tidak' }}</div>
 
                 @if($question->question_type === 'essay')
@@ -116,14 +123,19 @@
                         <div class="text-sm font-semibold text-slate-700">Opsi yang sudah ada</div>
                         <ul class="mt-2 list-disc pl-5 text-sm text-slate-700 space-y-1">
                             @forelse($question->options as $option)
-                                <li>{{ $option->option_text }} <span class="text-slate-500">({{ json_encode($option->scores_json) }})</span></li>
+                                <li>
+                                    <div>{{ $option->option_text }} <span class="text-slate-500">({{ json_encode($option->scores_json) }})</span></div>
+                                    @if($option->image_path)
+                                        <img src="{{ asset('storage/' . $option->image_path) }}" alt="Gambar opsi" class="mt-2 max-h-40 rounded-lg border border-slate-200 bg-white p-2">
+                                    @endif
+                                </li>
                             @empty
                                 <li class="text-slate-500">Belum ada opsi.</li>
                             @endforelse
                         </ul>
                     </div>
 
-                    <form method="POST" action="/admin/custom-tests/{{ $test->id }}/questions/{{ $question->id }}/options" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <form method="POST" action="/admin/custom-tests/{{ $test->id }}/questions/{{ $question->id }}/options" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         @csrf
                         <div class="md:col-span-2">
                             <label class="block text-sm font-semibold text-slate-700 mb-1">Teks Opsi Jawaban</label>
@@ -132,6 +144,10 @@
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1">Urutan Opsi</label>
                             <input type="number" min="1" max="9999" name="sort_order" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Gambar Opsi (opsional)</label>
+                            <input type="file" name="option_image" accept="image/*" class="w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-400">
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-semibold text-slate-700 mb-2">Logic Skor per Dimensi</label>

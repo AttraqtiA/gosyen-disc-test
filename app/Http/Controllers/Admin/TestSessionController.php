@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\CustomTest;
 use App\Models\TestSession;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -26,7 +27,15 @@ class TestSessionController extends Controller
             ? Client::whereKey($user->client_id)->get()
             : Client::orderBy('name')->get();
 
-        return view('admin.sessions.index', compact('sessions', 'clients'));
+        $customTests = CustomTest::query()
+            ->when($user->isClientAdmin(), fn ($query) => $query->where('client_id', $user->client_id))
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $sessions->load('customTestItems.customTest');
+
+        return view('admin.sessions.index', compact('sessions', 'clients', 'customTests'));
     }
 
     public function store(Request $request)
@@ -40,6 +49,8 @@ class TestSessionController extends Controller
             'client_id' => ['nullable', 'exists:clients,id'],
             'client_name' => ['nullable', 'string', 'max:255'],
             'expires_at' => ['nullable', 'date'],
+            'custom_test_ids' => ['nullable', 'array'],
+            'custom_test_ids.*' => ['integer', 'exists:custom_tests,id'],
         ]);
 
         $clientId = $validated['client_id'] ?? null;
@@ -54,7 +65,7 @@ class TestSessionController extends Controller
             $clientId = $client->id;
         }
 
-        TestSession::create([
+        $session = TestSession::create([
             'name' => $validated['name'],
             'code' => Str::upper($validated['code']),
             'test_type' => Str::upper($validated['test_type']),
@@ -62,6 +73,8 @@ class TestSessionController extends Controller
             'expires_at' => $validated['expires_at'] ?? null,
             'is_active' => true,
         ]);
+
+        $this->syncCustomPacketItems($session, $validated['custom_test_ids'] ?? []);
 
         return back()->with('success', 'Kode sesi berhasil dibuat.');
     }
@@ -94,6 +107,8 @@ class TestSessionController extends Controller
             'client_id' => ['nullable', 'exists:clients,id'],
             'client_name' => ['nullable', 'string', 'max:255'],
             'expires_at' => ['nullable', 'date'],
+            'custom_test_ids' => ['nullable', 'array'],
+            'custom_test_ids.*' => ['integer', 'exists:custom_tests,id'],
         ]);
 
         $clientId = $validated['client_id'] ?? null;
@@ -115,6 +130,8 @@ class TestSessionController extends Controller
             'client_id' => $clientId,
             'expires_at' => $validated['expires_at'] ?? null,
         ]);
+
+        $this->syncCustomPacketItems($session, $validated['custom_test_ids'] ?? []);
 
         return back()->with('success', 'Sesi berhasil diperbarui.');
     }
@@ -141,5 +158,23 @@ class TestSessionController extends Controller
         }
 
         abort(403, 'Anda tidak memiliki akses ke sesi ini.');
+    }
+
+    private function syncCustomPacketItems(TestSession $session, array $customTestIds): void
+    {
+        if (strtoupper($session->test_type) !== 'CUSTOM') {
+            $session->customTestItems()->delete();
+            return;
+        }
+
+        $customTestIds = array_values(array_unique(array_map('intval', $customTestIds)));
+        $session->customTestItems()->delete();
+
+        foreach ($customTestIds as $index => $customTestId) {
+            $session->customTestItems()->create([
+                'custom_test_id' => $customTestId,
+                'sort_order' => $index + 1,
+            ]);
+        }
     }
 }

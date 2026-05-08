@@ -165,11 +165,13 @@ class CustomTestController extends Controller
             'question_type' => ['required', 'in:single_choice,essay'],
             'sort_order' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'is_required' => ['nullable', 'boolean'],
+            'question_image' => ['nullable', 'image', 'max:5120'],
         ]);
 
         CustomTestQuestion::create([
             'custom_test_id' => $test->id,
             'question_text' => $validated['question_text'],
+            'image_path' => $request->file('question_image')?->store('custom-tests/questions', 'public'),
             'question_type' => $validated['question_type'],
             'sort_order' => $validated['sort_order'] ?? ($test->questions()->max('sort_order') + 1),
             'is_required' => (bool) ($validated['is_required'] ?? true),
@@ -201,6 +203,7 @@ class CustomTestController extends Controller
         $validated = $request->validate([
             'option_text' => ['required', 'string', 'max:1000'],
             'sort_order' => ['nullable', 'integer', 'min:1', 'max:9999'],
+            'option_image' => ['nullable', 'image', 'max:5120'],
         ]);
 
         $scores = [];
@@ -212,6 +215,7 @@ class CustomTestController extends Controller
         CustomTestOption::create([
             'custom_test_question_id' => $question->id,
             'option_text' => $validated['option_text'],
+            'image_path' => $request->file('option_image')?->store('custom-tests/options', 'public'),
             'scores_json' => $scores,
             'sort_order' => $validated['sort_order'] ?? ($question->options()->max('sort_order') + 1),
         ]);
