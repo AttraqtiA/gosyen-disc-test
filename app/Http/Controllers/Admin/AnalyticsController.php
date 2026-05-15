@@ -77,7 +77,7 @@ class AnalyticsController extends Controller
 
         return response()->streamDownload(function () use ($type, $startDate, $endDate, $clientId) {
             $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
+            $this->writeExcelCsvPreamble($out);
             fputcsv($out, $this->csvHeader());
 
             foreach ($this->buildExportRows($type, null, $startDate, $endDate, $clientId) as $row) {
@@ -103,7 +103,7 @@ class AnalyticsController extends Controller
 
         return response()->streamDownload(function () use ($session, $type, $startDate, $endDate, $user) {
             $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
+            $this->writeExcelCsvPreamble($out);
             fputcsv($out, $this->csvHeader());
 
             foreach ($this->buildExportRows($type, $session->id, $startDate, $endDate, $user->isSuperAdmin() ? null : $user->client_id) as $row) {
@@ -122,7 +122,7 @@ class AnalyticsController extends Controller
 
         return response()->streamDownload(function () {
             $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
+            $this->writeExcelCsvPreamble($out);
 
             fputcsv($out, [
                 'no_soal',
@@ -189,7 +189,7 @@ class AnalyticsController extends Controller
 
         return response()->streamDownload(function () use ($tests) {
             $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
+            $this->writeExcelCsvPreamble($out);
 
             fputcsv($out, $this->discManualHeader());
 
@@ -241,6 +241,12 @@ class AnalyticsController extends Controller
         }
 
         return [$startDate, $endDate, $activePreset];
+    }
+
+    private function writeExcelCsvPreamble($out): void
+    {
+        fwrite($out, "\xEF\xBB\xBF");
+        fwrite($out, "sep=,\r\n");
     }
 
     private function resolveOptionalDateRange(Request $request): array

@@ -98,7 +98,10 @@ class DiscFlowTest extends TestCase
         $csvResponse->assertOk();
 
         $csv = trim($csvResponse->streamedContent());
-        $lines = preg_split('/\r\n|\n|\r/', $csv);
+        $lines = array_values(array_filter(
+            preg_split('/\r\n|\n|\r/', $csv),
+            fn ($line) => trim($line, "\xEF\xBB\xBF") !== 'sep=,'
+        ));
         $this->assertGreaterThanOrEqual(2, count($lines));
 
         $header = str_getcsv($lines[0]);
